@@ -51,16 +51,16 @@ const nextRaceId = computed(() => races.value?.find(r => !r.locked)?.id ?? null)
             class="group flex items-center gap-4 p-4 rounded-xl border transition-all"
             :class="[
               race.id === nextRaceId
-                ? 'border-[#E10600]/40 bg-[#E10600]/5'
+                ? 'border-emerald-500/30 bg-emerald-500/5'
                 : race.hasResult
                   ? 'border-zinc-800/50 bg-zinc-900/30'
                   : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700',
-              race.locked && !race.hasResult ? 'opacity-60' : '',
+              race.locked && !race.hasResult ? 'opacity-50' : '',
             ]"
           >
             <div
               class="size-10 rounded-lg flex items-center justify-center text-sm font-black tabular-nums shrink-0"
-              :class="race.id === nextRaceId ? 'bg-[#E10600] text-white' : race.hasResult ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-800 text-zinc-300'"
+              :class="race.id === nextRaceId ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30' : race.hasResult ? 'bg-zinc-800/50 text-zinc-500' : 'bg-zinc-800 text-zinc-300'"
             >
               {{ races!.indexOf(race) + 1 }}
             </div>

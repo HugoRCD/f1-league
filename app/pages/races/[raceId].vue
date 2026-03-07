@@ -92,6 +92,28 @@ watch(isLocked, async (locked) => {
   }
 }, { immediate: true })
 
+const raceRound = computed(() => race.value?.round ?? null)
+const { data: qualifyingGrid } = useFetch(() => raceRound.value ? `/api/f1/qualifying/${raceRound.value}` : '', {
+  immediate: false,
+  watch: [raceRound],
+})
+const hasQuali = computed(() => (qualifyingGrid.value as any[])?.length > 0)
+
+function useQualifyingOrder() {
+  const grid = qualifyingGrid.value as any[]
+  if (!grid?.length) return
+  const top10 = grid.slice(0, 10)
+  const newList: { id: string }[] = []
+  for (const entry of top10) {
+    const surname = (entry.driverName as string).split(' ').pop()?.toLowerCase() ?? ''
+    const match = activeDrivers.value.find(d => d.lastName.toLowerCase() === surname)
+    if (match && !newList.some(x => x.id === match.id)) {
+      newList.push({ id: match.id })
+    }
+  }
+  predictionList.value = newList
+}
+
 const driverSearch = ref('')
 const filteredAvailableDrivers = computed(() => {
   if (!driverSearch.value) return availableDrivers.value
@@ -164,6 +186,32 @@ const filteredAvailableDrivers = computed(() => {
         </p>
       </div>
 
+      <!-- Qualifying Grid -->
+      <div v-if="canPredict && hasQuali" class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500">Qualifying Grid</h2>
+          <UButton
+            label="Use as starting point"
+            icon="i-lucide-copy"
+            size="xs"
+            variant="outline"
+            @click="useQualifyingOrder"
+          />
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+          <div
+            v-for="(entry, index) in (qualifyingGrid as any[]).slice(0, 10)"
+            :key="index"
+            class="flex items-center gap-3 px-3 py-1.5 border-b border-zinc-800/30 last:border-0 text-sm"
+          >
+            <span class="w-5 text-right text-xs font-black text-zinc-500 tabular-nums">{{ index + 1 }}</span>
+            <span class="text-zinc-400">{{ entry.driverCode }}</span>
+            <span class="font-medium">{{ entry.driverName }}</span>
+            <span v-if="entry.q3" class="ml-auto text-xs text-zinc-500 tabular-nums">{{ entry.q3 }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Prediction Form -->
       <div v-if="canPredict" class="mb-8">
         <div class="flex items-center justify-between mb-4">
@@ -231,7 +279,7 @@ const filteredAvailableDrivers = computed(() => {
             <button
               v-for="d in filteredAvailableDrivers"
               :key="d.id"
-              class="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 hover:border-zinc-600 transition-colors text-left"
+              class="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 hover:border-zinc-600 hover:scale-105 active:scale-95 transition-all text-left"
               :class="predictionList.length >= 10 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'"
               :disabled="predictionList.length >= 10"
               @click="addDriver(d.id)"

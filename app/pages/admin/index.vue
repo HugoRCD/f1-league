@@ -107,6 +107,38 @@ async function submitResult() {
   }
 }
 
+// --- Import from F1 API ---
+const importing = ref(false)
+const selectedRound = computed(() => {
+  if (!selectedRaceId.value || !races.value) return null
+  const index = races.value.findIndex(r => r.id === selectedRaceId.value)
+  return index >= 0 ? index + 1 : null
+})
+
+async function importFromApi() {
+  if (!selectedRound.value) return
+  importing.value = true
+  try {
+    const result = await $fetch('/api/admin/results/import', {
+      method: 'POST',
+      body: { round: selectedRound.value },
+    })
+    if (result.unmatchedCount > 0) {
+      toast.add({ title: 'Partial import', description: `${result.unmatchedCount} driver(s) could not be matched`, color: 'warning' })
+    }
+    else {
+      toast.add({ title: 'Results imported', description: 'Review and save below', color: 'success', icon: 'i-lucide-check' })
+    }
+    resultPositions.value = result.positions as (string | null)[]
+  }
+  catch (e: any) {
+    toast.add({ title: 'Import failed', description: e?.data?.message || 'No results available yet', color: 'error' })
+  }
+  finally {
+    importing.value = false
+  }
+}
+
 // --- Driver management ---
 const newDriver = reactive({ firstName: '', lastName: '', number: 0, teamId: '' })
 const savingDriver = ref(false)
@@ -459,9 +491,20 @@ const tabs = [
               />
             </div>
             <div v-if="selectedRaceId" class="flex flex-col gap-2">
-              <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-2">
-                Official Top 10
-              </p>
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">
+                  Official Top 10
+                </p>
+                <UButton
+                  label="Import from F1 API"
+                  icon="i-lucide-download"
+                  size="xs"
+                  variant="outline"
+                  :loading="importing"
+                  :disabled="!selectedRound"
+                  @click="importFromApi"
+                />
+              </div>
               <div v-for="(pos, index) in resultPositions" :key="index" class="flex items-center gap-2">
                 <PositionBadge :position="index + 1" size="sm" />
                 <div class="flex-1">

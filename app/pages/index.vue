@@ -16,6 +16,32 @@ const lastRaceWithResult = computed(() => {
 
 const completedCount = computed(() => races.value?.filter(r => r.hasResult).length ?? 0)
 const totalRaces = computed(() => races.value?.length ?? 0)
+
+const { data: f1News } = useCachedFetch('/api/f1/news', { immediate: loggedIn.value })
+const { data: driverStandings } = useCachedFetch('/api/f1/standings/drivers', { immediate: loggedIn.value })
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  if (hours < 1) return 'Just now'
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
+const teamColorMap: Record<string, string> = {
+  mclaren: '#FF8000',
+  ferrari: '#E8002D',
+  red_bull: '#3671C6',
+  mercedes: '#27F4D2',
+  aston_martin: '#229971',
+  alpine: '#FF87BC',
+  haas: '#B6BABD',
+  rb: '#6692FF',
+  williams: '#64C4FF',
+  audi: '#C0C0C0',
+  cadillac: '#1E1E1E',
+}
 </script>
 
 <template>
@@ -109,7 +135,8 @@ const totalRaces = computed(() => races.value?.length ?? 0)
 
     <div v-else class="grid gap-6 lg:grid-cols-2">
       <!-- Next race card -->
-      <div v-if="nextRace" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+      <FadeIn v-if="nextRace" :delay="0.1">
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-[#E10600]" />
         <div class="p-6">
           <div class="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-4">
@@ -138,9 +165,11 @@ const totalRaces = computed(() => races.value?.length ?? 0)
           />
         </div>
       </div>
+      </FadeIn>
 
       <!-- Last result card -->
-      <div v-if="lastRaceWithResult" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+      <FadeIn v-if="lastRaceWithResult" :delay="0.2">
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-linear-to-r from-yellow-500 via-zinc-400 to-amber-700" />
         <div class="p-6">
           <div class="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-4">
@@ -165,6 +194,7 @@ const totalRaces = computed(() => races.value?.length ?? 0)
           </div>
         </div>
       </div>
+      </FadeIn>
 
       <div v-if="!nextRace && !lastRaceWithResult" class="lg:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
         <UIcon name="i-lucide-flag-triangle-right" class="size-12 mx-auto mb-4 text-zinc-700" />
@@ -200,9 +230,46 @@ const totalRaces = computed(() => races.value?.length ?? 0)
       </div>
     </div>
 
-    <div class="mt-8 flex gap-3">
-      <UButton to="/races" label="Schedule" variant="outline" icon="i-lucide-calendar" class="font-semibold uppercase tracking-wider text-xs" />
-      <UButton to="/leaderboard" label="Standings" variant="outline" icon="i-lucide-trophy" class="font-semibold uppercase tracking-wider text-xs" />
+    <!-- F1 News + Driver Championship -->
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <!-- F1 News -->
+      <div v-if="(f1News as any[])?.length">
+        <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">Latest F1 News</h2>
+        <div class="flex flex-col gap-2">
+          <a
+            v-for="(article, i) in (f1News as any[]).slice(0, 5)"
+            :key="i"
+            :href="article.link"
+            target="_blank"
+            rel="noopener"
+            class="flex items-start gap-3 p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors"
+          >
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold leading-snug line-clamp-2">{{ article.title }}</p>
+              <p class="text-xs text-zinc-500 mt-1">{{ timeAgo(article.date) }}</p>
+            </div>
+            <UIcon name="i-lucide-external-link" class="size-3.5 text-zinc-600 shrink-0 mt-1" />
+          </a>
+        </div>
+      </div>
+
+      <!-- Driver Championship -->
+      <div v-if="(driverStandings as any[])?.length">
+        <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">F1 Driver Championship</h2>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+          <div
+            v-for="(d, i) in (driverStandings as any[]).slice(0, 10)"
+            :key="i"
+            class="flex items-center gap-3 px-3 py-2 border-b border-zinc-800/50 last:border-0"
+          >
+            <span class="w-5 text-right text-xs font-black tabular-nums" :class="i < 3 ? 'text-yellow-500' : 'text-zinc-500'">{{ d.position }}</span>
+            <div class="w-0.5 h-4 rounded-full" :style="{ backgroundColor: teamColorMap[d.teamId] || '#666' }" />
+            <span class="flex-1 text-sm font-medium truncate">{{ d.driverName }}</span>
+            <span class="font-black tabular-nums text-sm">{{ d.points }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
+          </div>
+        </div>
+      </div>
     </div>
+
   </UContainer>
 </template>

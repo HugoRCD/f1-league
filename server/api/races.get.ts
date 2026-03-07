@@ -25,8 +25,9 @@ export default defineEventHandler(async (event) => {
 
   const resultSet = new Set(results.map(r => r.raceId))
 
-  return races.map(race => ({
+  return races.map((race, index) => ({
     ...race,
+    round: index + 1,
     ...getRaceWindow(race.startAt, config),
     hasResult: resultSet.has(race.id),
   }))

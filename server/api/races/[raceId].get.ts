@@ -22,8 +22,17 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.raceResult.raceId, raceId))
     .limit(1)
 
+  const allRaces = await db
+    .select({ id: schema.race.id })
+    .from(schema.race)
+    .where(eq(schema.race.season, race.season))
+    .orderBy(schema.race.startAt)
+
+  const round = allRaces.findIndex(r => r.id === raceId) + 1
+
   return {
     ...race,
+    round,
     ...getRaceWindow(race.startAt, config),
     result: result?.positions ?? null,
   }
