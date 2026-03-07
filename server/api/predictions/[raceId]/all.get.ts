@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
       id: schema.prediction.id,
       userId: schema.prediction.userId,
       userName: schema.user.name,
+      userImage: schema.user.image,
       positions: schema.prediction.positions,
       createdAt: schema.prediction.createdAt,
     })

@@ -7,8 +7,7 @@ export default defineServerAuth(() => ({
   emailAndPassword: { enabled: false },
   session: {
     cookieCache: {
-      enabled: true,
-      maxAge: 60 * 5,
+      enabled: false,
     },
   },
   plugins: [

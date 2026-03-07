@@ -42,7 +42,6 @@ export default defineNuxtConfig({
       '0 9 * * *': ['pitwall-predict'],
     },
     rollupConfig: {
-      // @ts-expect-error vue plugin for email templates
       plugins: [vue()],
     },
   },
@@ -78,12 +77,16 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/admin/**': { auth: { user: { role: 'admin' } } },
-    '/races/**': { auth: 'user' },
-    '/leaderboard': { auth: 'user' },
+    '/': { isr: { expiration: 60 } },
+    '/races': { isr: { expiration: 30 } },
+    '/leaderboard': { isr: { expiration: 30 }, auth: 'user' },
     '/settings': { auth: 'user' },
+    '/races/**': { auth: 'user' },
+    '/admin/**': { auth: { user: { role: 'admin' } }, isr: false },
     '/login': { auth: 'guest' },
     '/register': { auth: 'guest' },
+    '/api/f1/**': { isr: { expiration: 300 } },
+    '/api/auth/**': { isr: false, cache: false },
   },
 
   icon: {

@@ -2,29 +2,29 @@
 definePageMeta({ auth: 'user' })
 useSeoMeta({ title: 'Settings — F1 League' })
 
-const { user, updateUser } = useUserSession()
+const { user, fetchSession } = useUserSession()
 const toast = useToast()
 
-const profileForm = reactive({ name: '', image: '' })
+const profileForm = reactive({
+  name: user.value?.name || '',
+  image: user.value?.image || '',
+})
 const savingProfile = ref(false)
-
-watch(user, (u) => {
-  if (u) {
-    profileForm.name = u.name || ''
-    profileForm.image = u.image || ''
-  }
-}, { immediate: true })
 
 async function saveProfile() {
   savingProfile.value = true
   try {
-    await updateUser({ name: profileForm.name, image: profileForm.image || null })
+    const saved = await $fetch('/api/user/profile', {
+      method: 'POST',
+      body: { name: profileForm.name, image: profileForm.image || null },
+    })
+    profileForm.name = saved.name || profileForm.name
+    clearNuxtData()
+    await fetchSession({ force: true })
     toast.add({ title: 'Profile updated', color: 'success', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
-    toast.add({ title: 'Error', description: e?.message || e?.data?.message, color: 'error' })
-  }
-  finally {
+  } catch (e: any) {
+    toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
+  } finally {
     savingProfile.value = false
   }
 }

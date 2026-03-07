@@ -13,10 +13,10 @@ useHead({
   title: computed(() => race.value ? `${race.value.name} — F1 League` : 'Race — F1 League'),
 })
 
-const { data: drivers } = useFetch('/api/drivers')
+const { data: drivers } = useCachedFetch('/api/drivers')
 const { data: myPrediction, refresh: refreshPrediction } = useFetch(`/api/predictions/${raceId}`)
-const { data: standings, refresh: refreshStandings } = useFetch(`/api/races/${raceId}/standings`)
-const { data: allPredictions, execute: fetchAllPredictions } = useFetch(`/api/predictions/${raceId}/all`, { immediate: false })
+const { data: standings, refresh: refreshStandings } = useLazyFetch(`/api/races/${raceId}/standings`)
+const { data: allPredictions, execute: fetchAllPredictions } = useLazyFetch(`/api/predictions/${raceId}/all`, { immediate: false })
 
 const activeDrivers = computed(() => drivers.value?.filter(d => d.active) ?? [])
 const saving = ref(false)
@@ -80,6 +80,7 @@ async function submitPrediction() {
       body: { positions: predictionList.value.map(d => d.id) },
     })
     toast.add({ title: 'Prediction saved!', color: 'success', icon: 'i-lucide-check' })
+    clearNuxtData()
     await refreshPrediction()
   } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || 'Failed to save', color: 'error' })
@@ -96,7 +97,7 @@ watch(isLocked, async (locked) => {
 }, { immediate: true })
 
 const raceRound = computed(() => race.value?.round ?? null)
-const qualifyingGrid = ref<any[]>([])
+const qualifyingGrid = shallowRef<any[]>([])
 const hasQuali = computed(() => qualifyingGrid.value.length > 0)
 
 watch(raceRound, async (round) => {
@@ -359,6 +360,7 @@ const teamColorMap: Record<string, string> = {
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
               <div v-for="(player, index) in standings.standings" :key="player.userId" class="flex items-center gap-4 px-4 py-3 border-b border-zinc-800/50 last:border-0">
                 <PositionBadge :position="index + 1" size="sm" />
+                <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
                 <span class="flex-1 font-semibold">{{ player.userName }}</span>
                 <div class="flex items-center gap-4 text-sm">
                   <span class="text-zinc-500">{{ player.exactHits }} exact</span>
@@ -382,7 +384,8 @@ const teamColorMap: Record<string, string> = {
             </h2>
             <div class="grid gap-4" :class="allPredictions.length > 1 ? 'sm:grid-cols-2' : ''">
               <div v-for="pred in allPredictions" :key="pred.id" class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div class="px-4 py-2.5 border-b border-zinc-800 bg-zinc-800/30">
+                <div class="px-4 py-2.5 border-b border-zinc-800 bg-zinc-800/30 flex items-center gap-2">
+                  <UserAvatar :image="pred.userImage" :name="pred.userName" size="sm" />
                   <span class="font-bold text-sm">{{ pred.userName }}</span>
                 </div>
                 <div v-for="(driverId, index) in (pred.positions as string[])" :key="driverId" class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0 text-sm">

@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
       id: schema.user.id,
       name: schema.user.name,
       email: schema.user.email,
+      image: schema.user.image,
       role: schema.user.role,
       createdAt: schema.user.createdAt,
       predictionsCount: sql<number>`(SELECT count(*)::int FROM prediction WHERE prediction."userId" = "user".id)`,

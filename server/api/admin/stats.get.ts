@@ -2,22 +2,17 @@ import { sql } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
-  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
-  const [teams] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.team)
-  const [drivers] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.driver)
-  const [races] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.race)
-  const [results] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.raceResult)
-  const [predictions] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.prediction)
+  const countQuery = (table: any) => db.select({ count: sql<number>`count(*)::int` }).from(table).then(r => r[0].count)
 
-  const stats = {
-    teams: teams.count,
-    drivers: drivers.count,
-    races: races.count,
-    results: results.count,
-    predictions: predictions.count,
-  }
-  log.set({ stats })
-  return stats
+  const [teams, drivers, races, results, predictions] = await Promise.all([
+    countQuery(schema.team),
+    countQuery(schema.driver),
+    countQuery(schema.race),
+    countQuery(schema.raceResult),
+    countQuery(schema.prediction),
+  ])
+
+  return { teams, drivers, races, results, predictions }
 })

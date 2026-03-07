@@ -1,27 +1,20 @@
-import { eq } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
-
 export default defineEventHandler(async (event) => {
-  const log = useLogger(event)
   const { user } = await requireUserSession(event)
-  log.set({ user: { id: user.id } })
 
   const body = await readBody<{ name?: string, image?: string }>(event)
 
-  const updates: Record<string, unknown> = {}
-  if (body.name) updates.name = body.name
-  if (typeof body.image === 'string') updates.image = body.image || null
-
-  if (Object.keys(updates).length === 0) {
+  if (!body.name && typeof body.image !== 'string') {
     throw createError({ statusCode: 400, message: 'Nothing to update' })
   }
 
-  const [updated] = await db
-    .update(schema.user)
-    .set(updates)
-    .where(eq(schema.user.id, user.id))
-    .returning({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
+  const auth = serverAuth(event)
+  const updated = await auth.api.updateUser({
+    headers: event.headers,
+    body: {
+      name: body.name || user.name,
+      image: typeof body.image === 'string' ? (body.image || null) : user.image,
+    },
+  })
 
-  log.set({ profile: { fields: Object.keys(updates) } })
-  return updated
+  return { id: user.id, name: updated.user.name, image: updated.user.image }
 })

@@ -481,9 +481,7 @@ const tabs = [
               <template v-else>
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="size-9 shrink-0 rounded-full bg-zinc-800 ring-1 ring-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300">
-                      {{ u.name?.charAt(0)?.toUpperCase() }}
-                    </div>
+                    <UserAvatar :image="u.image" :name="u.name" size="md" />
                     <div class="min-w-0">
                       <div class="flex items-center gap-2">
                         <span class="font-bold text-sm truncate">{{ u.name }}</span>

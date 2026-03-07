@@ -23,7 +23,7 @@ const completedCount = computed(() => races.value?.filter(r => r.hasResult).leng
 const totalRaces = computed(() => races.value?.length ?? 0)
 
 const nextRaceRound = computed(() => nextRace.value?.round ?? null)
-const nextRaceGrid = ref<any[]>([])
+const nextRaceGrid = shallowRef<any[]>([])
 watch(nextRaceRound, async (round) => {
   if (!round) return
   try {
@@ -247,6 +247,7 @@ const teamColorMap: Record<string, string> = {
           class="flex items-center gap-4 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50"
         >
           <PositionBadge :position="index + 1" />
+          <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
           <span class="flex-1 font-semibold">{{ player.userName }}</span>
           <div class="flex items-center gap-4 text-sm">
             <span class="text-zinc-500">{{ player.raceWins }}W</span>
