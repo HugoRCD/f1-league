@@ -2,22 +2,60 @@
 definePageMeta({ auth: 'guest' })
 useSeoMeta({ title: 'Sign in — F1 League' })
 
-const { signIn } = useUserSession()
+const { client } = useUserSession()
 const toast = useToast()
 
-const state = reactive({ email: '', password: '' })
+const route = useRoute()
+
+const step = ref<'email' | 'otp'>('email')
+const email = ref('')
+const name = ref('')
+const otp = ref('')
 const loading = ref(false)
 
-async function onSubmit() {
+onMounted(async () => {
+  const queryEmail = route.query.email as string
+  const queryCode = route.query.code as string
+  if (queryEmail && queryCode) {
+    email.value = queryEmail
+    otp.value = queryCode
+    step.value = 'otp'
+    await nextTick()
+    verifyCode()
+  }
+})
+
+async function sendCode() {
+  if (!email.value) return
   loading.value = true
   try {
-    await signIn.email(
-      { email: state.email, password: state.password },
-      { onSuccess: () => navigateTo('/') },
-    )
+    await client.emailOtp.sendVerificationOtp({
+      email: email.value,
+      type: 'sign-in',
+    })
+    step.value = 'otp'
+    toast.add({ title: 'Code sent', description: 'Check your email for the login code', color: 'success', icon: 'i-lucide-mail' })
   }
-  catch (e: any) {
-    toast.add({ title: 'Login failed', description: e?.message || 'Invalid credentials', color: 'error', icon: 'i-lucide-x-circle' })
+  catch {
+    toast.add({ title: 'Error', description: 'Could not send code. Make sure your email is registered.', color: 'error' })
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+async function verifyCode() {
+  if (!otp.value) return
+  loading.value = true
+  try {
+    await client.signIn.emailOtp({
+      email: email.value,
+      otp: otp.value,
+    })
+    navigateTo('/')
+  }
+  catch {
+    toast.add({ title: 'Invalid code', description: 'The code is incorrect or expired', color: 'error' })
   }
   finally {
     loading.value = false
@@ -35,19 +73,38 @@ async function onSubmit() {
           <span class="font-black text-sm uppercase tracking-[0.2em] text-zinc-300">League</span>
         </div>
         <h1 class="text-2xl font-black uppercase tracking-tight">Sign in</h1>
-        <p class="text-zinc-500 text-sm mt-1">Welcome back to the prediction league</p>
+        <p class="text-zinc-500 text-sm mt-1">We'll send you a login code by email</p>
       </div>
 
       <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <UForm :state="state" class="flex flex-col gap-4" @submit="onSubmit">
+        <!-- Step 1: Email -->
+        <form v-if="step === 'email'" class="flex flex-col gap-4" @submit.prevent="sendCode">
           <UFormField label="Email" name="email" required>
-            <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
+            <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" class="w-full" autofocus />
           </UFormField>
-          <UFormField label="Password" name="password" required>
-            <UInput v-model="state.password" type="password" placeholder="Your password" size="lg" class="w-full" />
+          <UButton type="submit" label="Send login code" icon="i-lucide-mail" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
+        </form>
+
+        <!-- Step 2: OTP -->
+        <form v-else class="flex flex-col gap-4" @submit.prevent="verifyCode">
+          <p class="text-sm text-zinc-400">
+            Code sent to <span class="text-white font-medium">{{ email }}</span>
+          </p>
+          <UFormField label="Login code" name="otp" required>
+            <UInput
+              v-model="otp"
+              placeholder="000000"
+              size="lg"
+              class="w-full text-center font-mono text-lg tracking-[0.3em]"
+              maxlength="6"
+              autofocus
+            />
           </UFormField>
-          <UButton type="submit" label="Sign in" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
-        </UForm>
+          <UButton type="submit" label="Sign in" icon="i-lucide-log-in" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
+          <button type="button" class="text-xs text-zinc-500 hover:text-white transition-colors" @click="step = 'email'">
+            Use a different email
+          </button>
+        </form>
       </div>
 
       <p class="text-center text-sm text-zinc-500 mt-6">

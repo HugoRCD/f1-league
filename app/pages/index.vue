@@ -69,11 +69,7 @@ const teamColorMap: Record<string, string> = {
 
       <UContainer class="relative py-32 lg:py-44">
         <div class="max-w-2xl">
-          <div class="flex items-center gap-4 mb-8">
-            <F1Logo class="h-10 w-auto text-[#E10600]" />
-            <div class="h-6 w-px bg-zinc-700" />
-            <span class="text-zinc-400 text-sm font-bold uppercase tracking-[0.25em]">Prediction League</span>
-          </div>
+          <p class="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-8">Prediction League — 2026 Season</p>
           <h1 class="text-5xl lg:text-7xl font-black uppercase tracking-tight leading-none">
             Predict.
             <br>

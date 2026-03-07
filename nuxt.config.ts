@@ -1,15 +1,15 @@
+import vue from '@vitejs/plugin-vue'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-06-01',
+  compatibilityDate: 'latest',
 
   devtools: { enabled: true },
 
   app: {
     head: {
       title: 'F1 League',
-      link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-      ],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },],
       meta: [
         { name: 'description', content: 'Predict the F1 Top 10 for every Grand Prix. Compete with friends across the season.' },
         { property: 'og:title', content: 'F1 League' },
@@ -22,9 +22,26 @@ export default defineNuxtConfig({
     },
   },
 
+  runtimeConfig: {
+    private: {
+      resendApiKey: '',
+      senderEmail: '',
+    },
+  },
+
   nitro: {
     imports: {
       dirs: ['./server/services'],
+    },
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0 8 * * *': ['send-reminders'],
+    },
+    rollupConfig: {
+      // @ts-expect-error vue plugin for email templates
+      plugins: [vue()],
     },
   },
 
@@ -57,6 +74,7 @@ export default defineNuxtConfig({
     '/admin/**': { auth: { user: { role: 'admin' } } },
     '/races/**': { auth: 'user' },
     '/leaderboard': { auth: 'user' },
+    '/settings': { auth: 'user' },
     '/login': { auth: 'guest' },
     '/register': { auth: 'guest' },
   },

@@ -288,6 +288,24 @@ async function saveScoring() {
   }
 }
 
+// --- Notifications ---
+const { data: notifSettings, refresh: refreshNotif } = useFetch('/api/admin/notifications')
+
+async function toggleGlobalNotifications() {
+  if (!notifSettings.value) return
+  const updated = { ...notifSettings.value, enabled: !notifSettings.value.enabled }
+  await $fetch('/api/admin/notifications', { method: 'POST', body: updated })
+  toast.add({ title: `Reminders ${updated.enabled ? 'enabled' : 'disabled'}`, color: 'success', icon: 'i-lucide-check' })
+  await refreshNotif()
+}
+
+async function updateReminderDays(days: number[]) {
+  if (!notifSettings.value) return
+  await $fetch('/api/admin/notifications', { method: 'POST', body: { ...notifSettings.value, reminderDaysBefore: days } })
+  toast.add({ title: 'Reminder schedule updated', color: 'success', icon: 'i-lucide-check' })
+  await refreshNotif()
+}
+
 const { user: currentUser } = useUserSession()
 
 const tabs = [
@@ -758,14 +776,38 @@ const tabs = [
                 <UButton label="Save" icon="i-lucide-check" :loading="savingScoring" size="sm" @click="saveScoring" />
                 <UButton label="Cancel" size="sm" variant="ghost" color="neutral" @click="editedScoring = null" />
               </template>
-              <UButton
-                v-else
-                label="Edit"
-                icon="i-lucide-pencil"
-                size="sm"
-                variant="outline"
-                @click="startEditScoring"
-              />
+              <UButton v-else label="Edit" icon="i-lucide-pencil" size="sm" variant="outline" @click="startEditScoring" />
+            </div>
+
+            <!-- Notifications -->
+            <div v-if="notifSettings">
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Email reminders</h3>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
+                  <div class="flex items-center gap-3">
+                    <UIcon name="i-lucide-bell" class="size-4 text-zinc-400" />
+                    <div>
+                      <p class="text-sm font-semibold">Prediction reminders</p>
+                      <p class="text-xs text-zinc-500">Send email reminders to players who haven't predicted yet</p>
+                    </div>
+                  </div>
+                  <USwitch :model-value="notifSettings.enabled" @update:model-value="toggleGlobalNotifications" />
+                </div>
+                <div v-if="notifSettings.enabled" class="px-4 py-3">
+                  <p class="text-xs text-zinc-500 mb-2">Send reminders at:</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="d in [7, 3, 2, 1]"
+                      :key="d"
+                      class="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
+                      :class="notifSettings.reminderDaysBefore.includes(d) ? 'bg-zinc-700 text-white' : 'bg-zinc-800/50 text-zinc-500 hover:text-zinc-300'"
+                      @click="updateReminderDays(notifSettings.reminderDaysBefore.includes(d) ? notifSettings.reminderDaysBefore.filter((x: number) => x !== d) : [...notifSettings.reminderDaysBefore, d].sort((a: number, b: number) => b - a))"
+                    >
+                      {{ d }} day{{ d > 1 ? 's' : '' }} before
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </template>

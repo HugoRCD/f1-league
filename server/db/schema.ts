@@ -53,6 +53,11 @@ export const raceResult = pgTable('raceResult', {
   updatedAt: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull(),
 })
 
+export const userPreferences = pgTable('userPreferences', {
+  userId: text('userId').primaryKey().references(() => authUser.id, { onDelete: 'cascade' }),
+  notificationsEnabled: boolean('notificationsEnabled').notNull().default(true),
+})
+
 export const teamRelations = relations(team, ({ many }) => ({
   drivers: many(driver),
 }))

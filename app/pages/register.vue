@@ -2,22 +2,46 @@
 definePageMeta({ auth: 'guest' })
 useSeoMeta({ title: 'Join the League — F1 League' })
 
-const { signUp } = useUserSession()
+const { client } = useUserSession()
 const toast = useToast()
 
-const state = reactive({ name: '', email: '', password: '' })
+const step = ref<'info' | 'otp'>('info')
+const name = ref('')
+const email = ref('')
+const otp = ref('')
 const loading = ref(false)
 
-async function onSubmit() {
+async function sendCode() {
+  if (!name.value || !email.value) return
   loading.value = true
   try {
-    await signUp.email(
-      { name: state.name, email: state.email, password: state.password },
-      { onSuccess: () => navigateTo('/') },
-    )
+    await client.emailOtp.sendVerificationOtp({
+      email: email.value,
+      type: 'sign-in',
+    })
+    step.value = 'otp'
+    toast.add({ title: 'Code sent', description: 'Check your email for the verification code', color: 'success', icon: 'i-lucide-mail' })
   }
-  catch (e: any) {
-    toast.add({ title: 'Registration failed', description: e?.message || 'Please try again', color: 'error', icon: 'i-lucide-x-circle' })
+  catch {
+    toast.add({ title: 'Error', description: 'Could not send code', color: 'error' })
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+async function verifyAndRegister() {
+  if (!otp.value) return
+  loading.value = true
+  try {
+    await client.signIn.emailOtp({
+      email: email.value,
+      otp: otp.value,
+    })
+    navigateTo('/')
+  }
+  catch {
+    toast.add({ title: 'Invalid code', description: 'The code is incorrect or expired', color: 'error' })
   }
   finally {
     loading.value = false
@@ -39,18 +63,37 @@ async function onSubmit() {
       </div>
 
       <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <UForm :state="state" class="flex flex-col gap-4" @submit="onSubmit">
+        <!-- Step 1: Name + Email -->
+        <form v-if="step === 'info'" class="flex flex-col gap-4" @submit.prevent="sendCode">
           <UFormField label="Name" name="name" required>
-            <UInput v-model="state.name" placeholder="Your name" size="lg" class="w-full" />
+            <UInput v-model="name" placeholder="Your name" size="lg" class="w-full" autofocus />
           </UFormField>
           <UFormField label="Email" name="email" required>
-            <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
+            <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
           </UFormField>
-          <UFormField label="Password" name="password" required>
-            <UInput v-model="state.password" type="password" placeholder="Min 8 characters" size="lg" class="w-full" />
+          <UButton type="submit" label="Send verification code" icon="i-lucide-mail" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
+        </form>
+
+        <!-- Step 2: OTP -->
+        <form v-else class="flex flex-col gap-4" @submit.prevent="verifyAndRegister">
+          <p class="text-sm text-zinc-400">
+            Code sent to <span class="text-white font-medium">{{ email }}</span>
+          </p>
+          <UFormField label="Verification code" name="otp" required>
+            <UInput
+              v-model="otp"
+              placeholder="000000"
+              size="lg"
+              class="w-full text-center font-mono text-lg tracking-[0.3em]"
+              maxlength="6"
+              autofocus
+            />
           </UFormField>
-          <UButton type="submit" label="Create account" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
-        </UForm>
+          <UButton type="submit" label="Create account" icon="i-lucide-user-plus" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
+          <button type="button" class="text-xs text-zinc-500 hover:text-white transition-colors" @click="step = 'info'">
+            Change email
+          </button>
+        </form>
       </div>
 
       <p class="text-center text-sm text-zinc-500 mt-6">
