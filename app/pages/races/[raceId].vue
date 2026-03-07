@@ -237,14 +237,13 @@ const teamColorMap: Record<string, string> = {
               <draggable
                 v-model="predictionList"
                 item-key="id"
-                handle=".drag-handle"
                 :animation="200"
                 ghost-class="opacity-30"
                 class="flex flex-col"
               >
                 <template #item="{ element, index }">
-                  <div class="flex items-center gap-2 px-3 py-2 border-b border-zinc-800/50 last:border-0 bg-zinc-900/80 hover:bg-zinc-800/50 transition-colors">
-                    <UIcon name="i-lucide-grip-vertical" class="drag-handle size-4 text-zinc-600 cursor-grab active:cursor-grabbing shrink-0 hidden sm:block" />
+                  <div class="flex items-center gap-2 px-3 py-2 border-b border-zinc-800/50 last:border-0 bg-zinc-900/80 hover:bg-zinc-800/50 transition-colors cursor-grab active:cursor-grabbing">
+                    <UIcon name="i-lucide-grip-vertical" class="size-4 text-zinc-600 shrink-0 hidden sm:block" />
                     <PositionBadge :position="index + 1" size="sm" />
                     <div class="flex-1 min-w-0">
                       <DriverBadge v-if="driverById(element.id)" v-bind="driverById(element.id)!" compact />
@@ -427,29 +426,39 @@ const teamColorMap: Record<string, string> = {
             </div>
 
             <div v-if="sidebarTab === 'grid' && hasQuali">
-              <div
+              <UTooltip
                 v-for="(entry, index) in (qualifyingGrid as any[])"
                 :key="index"
-                class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0"
-                :class="index < 10 ? '' : 'opacity-40'"
+                :text="`P${entry.position} ${entry.driverName} — ${entry.teamName}`"
               >
-                <span class="w-4 text-right text-[10px] font-black tabular-nums" :class="index < 3 ? 'text-yellow-500' : 'text-zinc-600'">{{ entry.position }}</span>
-                <div class="w-0.5 h-3 rounded-full" :style="{ backgroundColor: teamColorMap[entry.teamId] || '#666' }" />
-                <span class="text-xs font-bold text-zinc-500 w-7">{{ entry.driverCode }}</span>
-                <span class="flex-1 text-xs truncate">{{ entry.driverName }}</span>
-                <span v-if="entry.q3" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q3 }}</span>
-                <span v-else-if="entry.q2" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q2 }}</span>
-                <span v-else-if="entry.q1" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q1 }}</span>
-              </div>
+                <div
+                  class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0 cursor-default"
+                  :class="index < 10 ? '' : 'opacity-40'"
+                >
+                  <span class="w-4 text-right text-[10px] font-black tabular-nums" :class="index < 3 ? 'text-yellow-500' : 'text-zinc-600'">{{ entry.position }}</span>
+                  <div class="w-0.5 h-3 rounded-full" :style="{ backgroundColor: teamColorMap[entry.teamId] || '#666' }" />
+                  <span class="text-xs font-bold text-zinc-500 w-7">{{ entry.driverCode }}</span>
+                  <span class="flex-1 text-xs truncate">{{ entry.driverName }}</span>
+                  <span v-if="entry.q3" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q3 }}</span>
+                  <span v-else-if="entry.q2" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q2 }}</span>
+                  <span v-else-if="entry.q1" class="text-[10px] text-zinc-600 tabular-nums">{{ entry.q1 }}</span>
+                </div>
+              </UTooltip>
             </div>
 
             <div v-if="sidebarTab === 'championship' && (driverStandings as any[])?.length">
-              <div v-for="(d, i) in (driverStandings as any[]).slice(0, 22)" :key="i" class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0">
-                <span class="w-4 text-right text-[10px] font-black tabular-nums" :class="i < 3 ? 'text-yellow-500' : 'text-zinc-600'">{{ d.position }}</span>
-                <div class="w-0.5 h-3 rounded-full" :style="{ backgroundColor: teamColorMap[d.teamId] || '#666' }" />
-                <span class="flex-1 text-xs truncate">{{ d.driverName }}</span>
-                <span class="text-[10px] font-bold tabular-nums text-zinc-400">{{ d.points }}</span>
-              </div>
+              <UTooltip
+                v-for="(d, i) in (driverStandings as any[]).slice(0, 22)"
+                :key="i"
+                :text="`${d.driverName} — ${d.teamId?.replace('_', ' ')} — ${d.points}pts, ${d.wins}W`"
+              >
+                <div class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0 cursor-default">
+                  <span class="w-4 text-right text-[10px] font-black tabular-nums" :class="i < 3 ? 'text-yellow-500' : 'text-zinc-600'">{{ d.position }}</span>
+                  <div class="w-0.5 h-3 rounded-full" :style="{ backgroundColor: teamColorMap[d.teamId] || '#666' }" />
+                  <span class="flex-1 text-xs truncate">{{ d.driverName }}</span>
+                  <span class="text-[10px] font-bold tabular-nums text-zinc-400">{{ d.points }}</span>
+                </div>
+              </UTooltip>
             </div>
           </div>
         </div>
