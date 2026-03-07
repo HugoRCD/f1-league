@@ -19,7 +19,7 @@ async function saveProfile() {
       body: { name: profileForm.name, image: profileForm.image || null },
     })
     profileForm.name = saved.name || profileForm.name
-    clearNuxtData()
+    clearNuxtData('leaderboard')
     await fetchSession({ force: true })
     toast.add({ title: 'Profile updated', color: 'success', icon: 'i-lucide-check' })
   } catch (e: any) {

@@ -80,7 +80,7 @@ async function submitPrediction() {
       body: { positions: predictionList.value.map(d => d.id) },
     })
     toast.add({ title: 'Prediction saved!', color: 'success', icon: 'i-lucide-check' })
-    clearNuxtData()
+    clearNuxtData('races')
     await refreshPrediction()
   } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || 'Failed to save', color: 'error' })
