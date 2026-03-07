@@ -514,8 +514,8 @@ const tabs = [
                     />
                     <UDropdownMenu
                       :items="[
-                        [{ label: 'Edit', icon: 'i-lucide-pencil', click: () => startEditUser(u) }],
-                        ...(u.id !== currentUser?.id ? [[{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error' as const, click: () => deleteUser(u.id, u.name) }]] : []),
+                        [{ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => startEditUser(u) }],
+                        ...(u.id !== currentUser?.id ? [[{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => deleteUser(u.id, u.name) }]] : []),
                       ]"
                     >
                       <UButton icon="i-lucide-ellipsis-vertical" variant="ghost" color="neutral" size="xs" />

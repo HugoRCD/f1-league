@@ -82,6 +82,7 @@ export function calculateRaceScore(prediction: string[], result: string[], confi
 export interface PlayerRaceStanding {
   userId: string
   userName: string
+  userImage?: string | null
   total: number
   exactHits: number
   details: PositionScore[]
@@ -97,6 +98,7 @@ export function rankRaceStandings(standings: PlayerRaceStanding[]): PlayerRaceSt
 export interface SeasonStanding {
   userId: string
   userName: string
+  userImage: string | null
   totalPoints: number
   raceWins: number
   totalExactHits: number
@@ -117,6 +119,7 @@ export function calculateSeasonStandings(
         playerMap.set(player.userId, {
           userId: player.userId,
           userName: player.userName,
+          userImage: player.userImage ?? null,
           totalPoints: 0,
           raceWins: 0,
           totalExactHits: 0,

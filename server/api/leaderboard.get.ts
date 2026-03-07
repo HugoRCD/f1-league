@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
     .select({
       userId: schema.prediction.userId,
       userName: schema.user.name,
+      userImage: schema.user.image,
       raceId: schema.prediction.raceId,
       positions: schema.prediction.positions,
     })
@@ -44,6 +45,7 @@ export default defineEventHandler(async (event) => {
       return {
         userId: p.userId,
         userName: p.userName,
+        userImage: p.userImage,
         ...score,
       }
     })
