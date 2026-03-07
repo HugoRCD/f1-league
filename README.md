@@ -1,93 +1,58 @@
-# default-repository
+# F1 League
 
-<!-- automd:badges color=black license provider=shields -->
+A web app where friends predict the F1 Top 10 before each race, points are calculated based on positional accuracy, race winners and season standings are tracked, and predictions lock automatically before race start.
 
-[![npm version](https://img.shields.io/npm/v/default-repository?color=black)](https://npmjs.com/package/default-repository)
-[![npm downloads](https://img.shields.io/npm/dm/default-repository?color=black)](https://npmjs.com/package/default-repository)
-[![license](https://img.shields.io/github/license/HugoRCD/default-repository?color=black)](https://github.com/HugoRCD/default-repository/blob/main/LICENSE)
+## Features
 
-<!-- /automd -->
+- **Predict Top 10**: Submit your predicted finishing order for each Grand Prix
+- **Automatic scoring**: Points based on positional accuracy (5 for exact, 3 for off-by-1, 2 for off-by-2, 1 for in Top 10)
+- **Season leaderboard**: Cumulative standings with race wins and exact hit tracking
+- **Prediction window**: Predictions open X days before and lock Y minutes before race start
+- **Admin panel**: Manage users, drivers, races, results, scoring rules, and run simulations
+- **2026 season data**: Full seed with 11 teams, 22 drivers, and 24 races
 
-This repository is a template repository for creating new repositories with everything you need to get started.
+## Tech Stack
 
-## Usage
+- [Nuxt 4](https://nuxt.com) + [Nuxt UI](https://ui.nuxt.com)
+- [NuxtHub](https://hub.nuxt.com) (PostgreSQL via Drizzle ORM, KV, Cache)
+- [Better Auth](https://better-auth.com) via [@onmax/nuxt-better-auth](https://github.com/onmax/nuxt-better-auth)
+- [evlog](https://evlog.dev) for structured logging
 
-Install package:
+## Setup
 
-<!-- automd:pm-install -->
-
-```sh
-# ✨ Auto-detect
-npx nypm install default-repository
-
-# npm
-npm install default-repository
-
-# yarn
-yarn add default-repository
-
-# pnpm
-pnpm install default-repository
-
-# bun
-bun install default-repository
+```bash
+pnpm install
 ```
 
-<!-- /automd -->
+Copy the environment file and set your auth secret:
+
+```bash
+cp .env.example .env
+```
+
+Generate a secret:
+
+```bash
+openssl rand -base64 32
+```
 
 ## Development
 
-Before you start, you can use the `./scripts/rename.sh` script to rename all `default-repository` occurrences in the repository to your new repository name.
+```bash
+pnpm dev
+```
 
-<!-- automd:fetch url="gh:hugorcd/markdown/main/src/local_development.md" -->
+The first user to register becomes admin automatically. Go to `/admin` to seed the 2026 season data.
 
-<details>
-  <summary>Local development</summary>
+## Database
 
-- Clone this repository
-- Install latest LTS version of [Node.js](https://nodejs.org/en/)
-- Enable [Corepack](https://github.com/nodejs/corepack) using `corepack enable`
-- Install dependencies using `bun install`
+Generate and apply migrations:
 
-</details>
+```bash
+pnpm nuxt db generate
+pnpm nuxt db migrate
+```
 
-<!-- /automd -->
+## License
 
-<!-- automd:fetch url="gh:hugorcd/markdown/main/src/contributions.md" -->
-
-## Contributing
-To start contributing, you can follow these steps:
-
-1. First raise an issue to discuss the changes you would like to make.
-2. Fork the repository.
-3. Create a branch using conventional commits and the issue number as the branch name. For example, `feat/123` or `fix/456`.
-4. Make changes following the local development steps.
-5. Commit your changes following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
-6. If your changes affect the code, run tests using `bun run test`.
-7. Create a pull request following the [Pull Request Template](https://github.com/HugoRCD/markdown/blob/main/src/pull_request_template.md).
-   - To be merged, the pull request must pass the tests/workflow and have at least one approval.
-   - If your changes affect the documentation, make sure to update it.
-   - If your changes affect the code, make sure to update the tests.
-8. Wait for the maintainers to review your pull request.
-9. Once approved, the pull request will be merged in the next release !
-
-<!-- /automd -->
-
-<!-- automd:contributors license=Apache author=HugoRCD-->
-
-Published under the [APACHE](https://github.com/HugoRCD/default-repository/blob/main/LICENSE) license.
-Made by [@HugoRCD](https://github.com/HugoRCD) and [community](https://github.com/HugoRCD/default-repository/graphs/contributors) 💛
-<br><br>
-<a href="https://github.com/HugoRCD/default-repository/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=HugoRCD/default-repository" />
-</a>
-
-<!-- /automd -->
-
-<!-- automd:with-automd lastUpdate -->
-
----
-
-_🤖 auto updated with [automd](https://automd.unjs.io) (last updated: Sat Aug 24 2024)_
-
-<!-- /automd -->
+[Apache 2.0](./LICENSE)

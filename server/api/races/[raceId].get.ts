@@ -1,0 +1,30 @@
+import { eq } from 'drizzle-orm'
+import { db, schema } from 'hub:db'
+
+export default defineEventHandler(async (event) => {
+  const raceId = getRouterParam(event, 'raceId')!
+
+  const config = await getScoringConfig()
+
+  const [race] = await db
+    .select()
+    .from(schema.race)
+    .where(eq(schema.race.id, raceId))
+    .limit(1)
+
+  if (!race) {
+    throw createError({ statusCode: 404, message: 'Race not found' })
+  }
+
+  const [result] = await db
+    .select()
+    .from(schema.raceResult)
+    .where(eq(schema.raceResult.raceId, raceId))
+    .limit(1)
+
+  return {
+    ...race,
+    ...getRaceWindow(race.startAt, config),
+    result: result?.positions ?? null,
+  }
+})

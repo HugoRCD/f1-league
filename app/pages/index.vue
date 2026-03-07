@@ -1,5 +1,208 @@
+<script setup lang="ts">
+const { loggedIn, user } = useUserSession()
+
+const { data: races, status: racesStatus } = useCachedFetch('/api/races', { immediate: loggedIn.value })
+const { data: leaderboard, status: leaderboardStatus } = useCachedFetch('/api/leaderboard', { immediate: loggedIn.value })
+
+const nextRace = computed(() => {
+  if (!races.value) return null
+  return races.value.find(r => !r.locked) ?? null
+})
+
+const lastRaceWithResult = computed(() => {
+  if (!races.value) return null
+  return [...races.value].reverse().find(r => r.hasResult) ?? null
+})
+
+const completedCount = computed(() => races.value?.filter(r => r.hasResult).length ?? 0)
+const totalRaces = computed(() => races.value?.length ?? 0)
+</script>
+
 <template>
-  <div>
-    <h1>Hello World</h1>
+  <!-- HERO - Logged out -->
+  <div v-if="!loggedIn">
+    <div class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-linear-to-br from-[#E10600]/15 via-zinc-950 to-zinc-950" />
+      <div class="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-[#E10600]/5 to-transparent" />
+      <div class="absolute bottom-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#E10600]/40 to-transparent" />
+
+      <UContainer class="relative py-32 lg:py-44">
+        <div class="max-w-2xl">
+          <div class="flex items-center gap-4 mb-8">
+            <F1Logo class="h-10 w-auto text-[#E10600]" />
+            <div class="h-6 w-px bg-zinc-700" />
+            <span class="text-zinc-400 text-sm font-bold uppercase tracking-[0.25em]">Prediction League</span>
+          </div>
+          <h1 class="text-5xl lg:text-7xl font-black uppercase tracking-tight leading-none">
+            Predict.
+            <br />
+            <span class="text-[#E10600]">Compete.</span>
+            <br />
+            Win.
+          </h1>
+          <p class="mt-6 text-lg text-zinc-400 max-w-lg leading-relaxed">
+            Predict the Top 10 finishing order for every Grand Prix. Earn points for accuracy. Compete with friends across the entire season.
+          </p>
+          <div class="flex items-center gap-4 mt-10">
+            <UButton to="/register" label="Join the League" size="xl" class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
+            <UButton to="/login" label="Sign in" variant="outline" size="xl" class="font-semibold" />
+          </div>
+        </div>
+      </UContainer>
+    </div>
+
+    <div class="border-t border-zinc-800/50">
+      <UContainer class="py-16">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="text-center">
+            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
+              <UIcon name="i-lucide-list-ordered" class="size-6 text-[#E10600]" />
+            </div>
+            <h3 class="font-bold mb-1">Predict Top 10</h3>
+            <p class="text-sm text-zinc-500">Submit your predicted finishing order before each race locks.</p>
+          </div>
+          <div class="text-center">
+            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
+              <UIcon name="i-lucide-calculator" class="size-6 text-[#E10600]" />
+            </div>
+            <h3 class="font-bold mb-1">Score Points</h3>
+            <p class="text-sm text-zinc-500">Earn up to 5 points per position based on accuracy.</p>
+          </div>
+          <div class="text-center">
+            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
+              <UIcon name="i-lucide-trophy" class="size-6 text-[#E10600]" />
+            </div>
+            <h3 class="font-bold mb-1">Win the Season</h3>
+            <p class="text-sm text-zinc-500">Climb the leaderboard and crown the champion at season's end.</p>
+          </div>
+        </div>
+      </UContainer>
+    </div>
   </div>
+
+  <!-- DASHBOARD - Logged in -->
+  <UContainer v-else class="py-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">Dashboard</p>
+        <h1 class="text-2xl font-black mt-1">Hey {{ user?.name }}</h1>
+      </div>
+      <div v-if="totalRaces" class="text-right hidden sm:block">
+        <p class="text-2xl font-black tabular-nums">{{ completedCount }}<span class="text-zinc-600">/{{ totalRaces }}</span></p>
+        <p class="text-xs text-zinc-500">races completed</p>
+      </div>
+    </div>
+
+    <!-- Skeleton loading -->
+    <div v-if="racesStatus === 'pending'" class="grid gap-6 lg:grid-cols-2">
+      <div v-for="i in 2" :key="i" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        <div class="h-1 bg-zinc-800" />
+        <div class="p-6 flex flex-col gap-4">
+          <USkeleton class="h-4 w-24" />
+          <USkeleton class="h-6 w-48" />
+          <USkeleton class="h-4 w-32" />
+          <USkeleton class="h-12 w-full mt-4" />
+          <USkeleton class="h-10 w-full mt-2" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="grid gap-6 lg:grid-cols-2">
+      <!-- Next race card -->
+      <div v-if="nextRace" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        <div class="h-1 bg-[#E10600]" />
+        <div class="p-6">
+          <div class="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-4">
+            <UIcon name="i-lucide-calendar" class="size-4" />
+            Next Race
+          </div>
+          <h2 class="text-xl font-black uppercase">{{ nextRace.name }}</h2>
+          <div class="flex items-center gap-2 text-sm text-zinc-400 mt-1">
+            <UIcon name="i-lucide-map-pin" class="size-3.5" />
+            {{ nextRace.location }}
+            <span class="text-zinc-600">|</span>
+            {{ new Date(nextRace.startAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) }}
+          </div>
+          <div class="mt-6 mb-6">
+            <p class="text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-2">Predictions lock in</p>
+            <CountdownTimer :target-date="nextRace.lockTime" size="lg" />
+          </div>
+          <UButton
+            :to="`/races/${nextRace.id}`"
+            label="Make your prediction"
+            icon="i-lucide-arrow-right"
+            trailing
+            size="lg"
+            class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
+            block
+          />
+        </div>
+      </div>
+
+      <!-- Last result card -->
+      <div v-if="lastRaceWithResult" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        <div class="h-1 bg-linear-to-r from-yellow-500 via-zinc-400 to-amber-700" />
+        <div class="p-6">
+          <div class="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-4">
+            <UIcon name="i-lucide-flag-triangle-right" class="size-4" />
+            Latest Result
+          </div>
+          <h2 class="text-xl font-black uppercase">{{ lastRaceWithResult.name }}</h2>
+          <div class="flex items-center gap-2 text-sm text-zinc-400 mt-1">
+            <UIcon name="i-lucide-map-pin" class="size-3.5" />
+            {{ lastRaceWithResult.location }}
+          </div>
+          <div class="mt-6">
+            <UButton
+              :to="`/races/${lastRaceWithResult.id}`"
+              label="View race standings"
+              icon="i-lucide-arrow-right"
+              trailing
+              variant="outline"
+              size="lg"
+              block
+            />
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!nextRace && !lastRaceWithResult" class="lg:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
+        <UIcon name="i-lucide-flag-triangle-right" class="size-12 mx-auto mb-4 text-zinc-700" />
+        <p class="text-zinc-400">No races available yet. Ask an admin to seed the season data.</p>
+      </div>
+    </div>
+
+    <!-- Season leaderboard preview -->
+    <div v-if="leaderboardStatus === 'pending'" class="mt-8">
+      <USkeleton class="h-6 w-40 mb-4" />
+      <div class="flex flex-col gap-2">
+        <USkeleton v-for="i in 5" :key="i" class="h-14 w-full rounded-xl" />
+      </div>
+    </div>
+    <div v-else-if="leaderboard?.length" class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-black uppercase tracking-tight">Season Standings</h2>
+        <UButton to="/leaderboard" label="View full standings" variant="link" size="sm" trailing-icon="i-lucide-arrow-right" />
+      </div>
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="(player, index) in leaderboard.slice(0, 5)"
+          :key="player.userId"
+          class="flex items-center gap-4 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50"
+        >
+          <PositionBadge :position="index + 1" />
+          <span class="flex-1 font-semibold">{{ player.userName }}</span>
+          <div class="flex items-center gap-4 text-sm">
+            <span class="text-zinc-500">{{ player.raceWins }}W</span>
+            <span class="font-black text-lg tabular-nums">{{ player.totalPoints }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 flex gap-3">
+      <UButton to="/races" label="Schedule" variant="outline" icon="i-lucide-calendar" class="font-semibold uppercase tracking-wider text-xs" />
+      <UButton to="/leaderboard" label="Standings" variant="outline" icon="i-lucide-trophy" class="font-semibold uppercase tracking-wider text-xs" />
+    </div>
+  </UContainer>
 </template>

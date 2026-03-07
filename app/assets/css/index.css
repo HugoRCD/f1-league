@@ -1,2 +1,26 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+@theme static {
+  --color-f1-50: #fff1f1;
+  --color-f1-100: #ffe0e0;
+  --color-f1-200: #ffc7c7;
+  --color-f1-300: #ff9e9e;
+  --color-f1-400: #ff5c5c;
+  --color-f1-500: #ff1801;
+  --color-f1-600: #E10600;
+  --color-f1-700: #be0500;
+  --color-f1-800: #9c0500;
+  --color-f1-900: #810808;
+  --color-f1-950: #460101;
+
+  --font-display: 'system-ui', sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background-color: var(--color-zinc-950);
+}

@@ -4,16 +4,22 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  app: {
+    head: {
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },],
+    },
+  },
+
   nitro: {
     imports: {
-      dirs: ['./server/services']
-    }
+      dirs: ['./server/services'],
+    },
   },
 
   css: ['~/assets/css/index.css'],
 
   image: {
-    provider: 'ipx'
+    provider: 'ipx',
   },
 
   hub: {
@@ -27,13 +33,45 @@ export default defineNuxtConfig({
     include: ['/api/**'],
   },
 
+  auth: {
+    redirects: {
+      login: '/login',
+      guest: '/',
+    },
+    hubSecondaryStorage: true,
+  },
+
+  routeRules: {
+    '/admin/**': { auth: { user: { role: 'admin' } } },
+    '/races/**': { auth: 'user' },
+    '/leaderboard': { auth: 'user' },
+    '/login': { auth: 'guest' },
+    '/register': { auth: 'guest' },
+  },
+
+  icon: {
+    customCollections: [
+      {
+        prefix: 'f1',
+        dir: './app/assets/icons',
+      }
+    ],
+  },
+
+  ui: {
+    theme: {
+      colors: ['primary', 'secondary', 'success', 'info', 'warning', 'error'],
+    },
+  },
+
   modules: [
     '@nuxthub/core',
+    '@onmax/nuxt-better-auth',
     'evlog/nuxt',
     '@nuxt/ui',
     '@nuxt/scripts',
     '@nuxt/image',
     '@vueuse/nuxt',
-    'motion-v/nuxt'
-  ]
+    'motion-v/nuxt',
+  ],
 })
