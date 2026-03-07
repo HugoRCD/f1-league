@@ -16,7 +16,20 @@ export default defineNuxtConfig({
     provider: 'ipx'
   },
 
+  hub: {
+    db: 'postgresql',
+    kv: true,
+    cache: true,
+  },
+
+  evlog: {
+    env: { service: 'f1-championship' },
+    include: ['/api/**'],
+  },
+
   modules: [
+    '@nuxthub/core',
+    'evlog/nuxt',
     '@nuxt/ui',
     '@nuxt/scripts',
     '@nuxt/image',
