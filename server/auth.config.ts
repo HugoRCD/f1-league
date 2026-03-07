@@ -1,5 +1,4 @@
-import { admin } from 'better-auth/plugins'
-import { emailOTP } from 'better-auth/plugins'
+import { admin, emailOTP } from 'better-auth/plugins'
 import { sql } from 'drizzle-orm'
 import { sendOtpEmail, sendWelcomeEmail } from './services/resend'
 
@@ -17,8 +16,8 @@ export default defineServerAuth(() => ({
     emailOTP({
       otpLength: 6,
       expiresIn: 600,
-      async sendVerificationOTP({ email, otp, type }) {
-        const baseUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+      async sendVerificationOTP({ email, otp }) {
+        const baseUrl = process.env.BETTER_AUTH_URL || process.env.xd || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000'
         const magicLink = `${baseUrl}/login?email=${encodeURIComponent(email)}&code=${otp}`
         await sendOtpEmail(email, otp, magicLink)
       },
