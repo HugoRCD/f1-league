@@ -2,7 +2,7 @@
 definePageMeta({ auth: 'guest' })
 useSeoMeta({ title: 'Join the League — F1 League' })
 
-const { client, fetchSession } = useUserSession()
+const { client, fetchSession, updateUser } = useUserSession()
 const toast = useToast()
 
 const step = ref<'info' | 'otp'>('info')
@@ -41,8 +41,7 @@ async function verifyAndRegister() {
     await fetchSession({ force: true })
     if (name.value) {
       try {
-        await $fetch('/api/user/profile', { method: 'POST', body: { name: name.value } })
-        await fetchSession({ force: true })
+        await updateUser({ name: name.value })
       }
       catch (e) {
         log.error({ action: 'set_name_failed', error: String(e) })

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
@@ -24,23 +24,21 @@ export default defineEventHandler(async (event) => {
     { name: 'Eve', email: 'eve@test.com' },
   ]
 
-  const auth = serverAuth(event)
-
   const userIds: string[] = []
   for (const fakeUser of fakeUsers) {
-    try {
-      const result = await auth.api.signUpEmail({
-        body: { name: fakeUser.name, email: fakeUser.email, password: 'password123' },
-      })
-      if (result.user) userIds.push(result.user.id)
+    const [existing] = await db
+      .select({ id: schema.user.id })
+      .from(schema.user)
+      .where(eq(schema.user.email, fakeUser.email))
+      .limit(1)
+
+    if (existing) {
+      userIds.push(existing.id)
     }
-    catch {
-      const [existing] = await db
-        .select({ id: schema.user.id })
-        .from(schema.user)
-        .where(eq(schema.user.email, fakeUser.email))
-        .limit(1)
-      if (existing) userIds.push(existing.id)
+    else {
+      const id = crypto.randomUUID()
+      await db.execute(sql`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") VALUES (${id}, ${fakeUser.name}, ${fakeUser.email}, true, NOW(), NOW())`)
+      userIds.push(id)
     }
   }
 

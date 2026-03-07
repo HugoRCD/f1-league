@@ -38,6 +38,7 @@ export default defineNuxtConfig({
     },
     scheduledTasks: {
       '0 8 * * *': ['send-reminders'],
+      '0 9 * * *': ['pitwall-predict'],
     },
     rollupConfig: {
       // @ts-expect-error vue plugin for email templates

@@ -49,6 +49,24 @@ async function simulateChampionship() {
 }
 
 
+const aiRaceId = ref('')
+const aiPredicting = ref(false)
+async function runAiPrediction() {
+  if (!aiRaceId.value) return
+  aiPredicting.value = true
+  try {
+    const result = await $fetch('/api/admin/ai-predict', { method: 'POST', body: { raceId: aiRaceId.value } })
+    toast.add({ title: 'Pitwall has spoken', description: result.driverNames.slice(0, 5).join(' → ') + ' ...', color: 'success', icon: 'i-lucide-bot' })
+    await refreshAll()
+  }
+  catch (e: any) {
+    toast.add({ title: 'AI prediction failed', description: e?.data?.message, color: 'error' })
+  }
+  finally {
+    aiPredicting.value = false
+  }
+}
+
 const resetting = ref(false)
 async function resetSimulation() {
   resetting.value = true
@@ -379,6 +397,30 @@ const tabs = [
                     class="w-32"
                   />
                   <UButton label="Run simulation" icon="i-lucide-play" :loading="simulating" size="sm" @click="simulateChampionship" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Pitwall</h3>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                <div class="flex items-center gap-3 mb-2">
+                  <UIcon name="i-lucide-bot" class="size-4 text-violet-400 shrink-0" />
+                  <div>
+                    <p class="font-bold text-sm">Pitwall — AI Competitor</p>
+                    <p class="text-xs text-zinc-500">Your AI rival. Pitwall analyzes the starting grid, championship standings, and recent form to make its own Top 10 prediction. It plays as a regular competitor — can your friends beat the machine?</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 mt-3 pl-7">
+                  <USelectMenu
+                    v-model="aiRaceId"
+                    :items="(races ?? []).map(r => ({ label: r.name, value: r.id }))"
+                    value-key="value"
+                    placeholder="Select race..."
+                    size="sm"
+                    class="w-52"
+                  />
+                  <UButton label="Let Pitwall predict" icon="i-lucide-bot" :loading="aiPredicting" :disabled="!aiRaceId" size="sm" @click="runAiPrediction" />
                 </div>
               </div>
             </div>
