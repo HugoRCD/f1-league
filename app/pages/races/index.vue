@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ auth: 'user' })
+useSeoMeta({ title: '2026 Schedule — F1 League', description: 'Full 2026 F1 race calendar with prediction status and countdown timers.' })
 
 const { data: races, status } = useCachedFetch('/api/races')
 
@@ -71,7 +72,13 @@ const nextRaceId = computed(() => races.value?.find(r => !r.locked)?.id ?? null)
                 {{ race.location }}
               </p>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-2 shrink-0">
+              <UIcon
+                v-if="race.hasPrediction && !race.hasResult"
+                name="i-lucide-check-circle"
+                class="size-4 text-emerald-500"
+                title="Prediction submitted"
+              />
               <div class="text-right hidden sm:block">
                 <p class="text-sm font-medium tabular-nums">
                   {{ new Date(race.startAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }}

@@ -6,7 +6,19 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },],
+      title: 'F1 League',
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      ],
+      meta: [
+        { name: 'description', content: 'Predict the F1 Top 10 for every Grand Prix. Compete with friends across the season.' },
+        { property: 'og:title', content: 'F1 League' },
+        { property: 'og:description', content: 'Predict the F1 Top 10 for every Grand Prix. Compete with friends across the season.' },
+        { property: 'og:image', content: '/og.png' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: '/og.png' },
+      ],
     },
   },
 

@@ -1,14 +1,15 @@
 const F1_API = 'https://f1api.dev/api'
+const SEASON = new Date().getFullYear()
 
 export default defineCachedEventHandler(async (event) => {
   const round = getRouterParam(event, 'round')!
 
   try {
-    const data = await $fetch<any>(`${F1_API}/current/${round}/qualy`)
-    const results = data.races?.results ?? data.results ?? []
+    const data = await $fetch<any>(`${F1_API}/${SEASON}/${round}/qualy`)
+    const results = data.races?.qualyResults ?? data.qualyResults ?? []
 
     return results.map((entry: any) => ({
-      position: entry.gridPosition ?? entry.position ?? entry.classificationId,
+      position: entry.gridPosition ?? entry.position,
       driverName: `${entry.driver?.name ?? ''} ${entry.driver?.surname ?? ''}`.trim(),
       driverCode: entry.driver?.shortName ?? '',
       teamName: entry.team?.teamName ?? '',

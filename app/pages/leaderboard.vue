@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ auth: 'user' })
+useSeoMeta({ title: 'Championship Standings — F1 League', description: 'Season leaderboard with cumulative points, race wins, and exact predictions.' })
 
 const { user } = useUserSession()
 const { data: leaderboard, status } = useCachedFetch('/api/leaderboard')

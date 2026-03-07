@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ auth: 'guest' })
+useSeoMeta({ title: 'Join the League — F1 League' })
 
 const { signUp } = useUserSession()
 const toast = useToast()

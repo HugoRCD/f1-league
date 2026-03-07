@@ -34,6 +34,7 @@
     "@nuxthub/core": "^0.10.7",
     "@onmax/nuxt-better-auth": "0.0.2-alpha.30",
     "@unhead/vue": "^2.1.10",
+    "@upstash/redis": "^1.36.3",
     "@vueuse/core": "^14.2.1",
     "@vueuse/nuxt": "14.2.1",
     "better-auth": "^1.5.4",

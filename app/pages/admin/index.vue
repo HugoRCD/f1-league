@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ auth: { user: { role: 'admin' } } })
+useSeoMeta({ title: 'Admin Panel — F1 League' })
 
 const toast = useToast()
 const tab = ref('seed')
@@ -12,6 +13,7 @@ const { data: users, refresh: refreshUsers } = useFetch('/api/admin/users')
 const activeDrivers = computed(() => drivers.value?.filter(d => d.active) ?? [])
 
 async function refreshAll() {
+  clearNuxtData()
   await Promise.all([refreshRaces(), refreshDrivers(), refreshStats(), refreshUsers()])
 }
 

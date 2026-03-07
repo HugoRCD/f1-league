@@ -1,3 +1,5 @@
+![F1 League Banner](public/banner.png)
+
 # F1 League
 
 A web app where friends predict the F1 Top 10 before each race, points are calculated based on positional accuracy, race winners and season standings are tracked, and predictions lock automatically before race start.

@@ -1,5 +1,7 @@
-import { sql } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+
+const FAKE_EMAILS = ['alice@test.com', 'bob@test.com', 'charlie@test.com', 'diana@test.com', 'eve@test.com']
 
 export default defineEventHandler(async (event) => {
   await requireUserSession(event, { user: { role: 'admin' } })
@@ -7,22 +9,20 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<{ target: 'simulation' | 'all' }>(event)
 
   if (body.target === 'simulation') {
-    const fakeEmails = ['alice@test.com', 'bob@test.com', 'charlie@test.com', 'diana@test.com', 'eve@test.com']
-
     const fakeUsers = await db
       .select({ id: schema.user.id })
       .from(schema.user)
-      .where(sql`${schema.user.email} = ANY(${fakeEmails})`)
+      .where(inArray(schema.user.email, FAKE_EMAILS))
 
     const fakeUserIds = fakeUsers.map(u => u.id)
 
     if (fakeUserIds.length > 0) {
-      await db.delete(schema.prediction).where(sql`${schema.prediction.userId} = ANY(${fakeUserIds})`)
+      await db.delete(schema.prediction).where(inArray(schema.prediction.userId, fakeUserIds))
       for (const id of fakeUserIds) {
-        await db.delete(schema.session).where(sql`${schema.session.userId} = ${id}`)
-        await db.delete(schema.account).where(sql`${schema.account.userId} = ${id}`)
+        await db.delete(schema.session).where(eq(schema.session.userId, id))
+        await db.delete(schema.account).where(eq(schema.account.userId, id))
       }
-      await db.delete(schema.user).where(sql`${schema.user.id} = ANY(${fakeUserIds})`)
+      await db.delete(schema.user).where(inArray(schema.user.id, fakeUserIds))
     }
 
     await db.delete(schema.raceResult)
