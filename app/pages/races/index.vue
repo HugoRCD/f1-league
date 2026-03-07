@@ -31,7 +31,6 @@ const nextRaceId = computed(() => races.value?.find(r => !r.locked)?.id ?? null)
       </div>
     </div>
 
-    <!-- Skeleton loading -->
     <div v-if="status === 'pending'" class="flex flex-col gap-6">
       <div v-for="i in 3" :key="i">
         <USkeleton class="h-4 w-32 mb-3" />

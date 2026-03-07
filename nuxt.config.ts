@@ -60,6 +60,11 @@ export default defineNuxtConfig({
   evlog: {
     env: { service: 'f1-championship' },
     include: ['/api/**'],
+    exclude: ['/api/_evlog/**'],
+    sampling: {
+      rates: { info: 50 },
+      keep: [{ status: 400 }, { status: 500 }, { duration: 1000 }],
+    },
   },
 
   auth: {

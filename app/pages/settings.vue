@@ -54,7 +54,6 @@ async function setNotifications(enabled: boolean) {
       <h1 class="text-2xl font-black uppercase tracking-tight mt-1">Settings</h1>
     </div>
 
-    <!-- Profile -->
     <div class="mb-8">
       <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">Profile</h2>
       <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -85,7 +84,6 @@ async function setNotifications(enabled: boolean) {
       </div>
     </div>
 
-    <!-- Notifications -->
     <div>
       <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">Notifications</h2>
       <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">

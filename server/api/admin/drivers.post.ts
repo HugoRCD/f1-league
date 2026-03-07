@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{
@@ -13,6 +14,8 @@ export default defineEventHandler(async (event) => {
     teamId?: string
     active?: boolean
   }>(event)
+
+  log.set({ admin: { action: body.action, driverId: body.id } })
 
   if (body.action === 'create') {
     if (!body.firstName || !body.lastName || !body.number || !body.teamId) {

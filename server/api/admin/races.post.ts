@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{
@@ -12,6 +13,8 @@ export default defineEventHandler(async (event) => {
     startAt?: string
     season?: number
   }>(event)
+
+  log.set({ admin: { action: body.action, raceId: body.id } })
 
   if (body.action === 'create') {
     if (!body.name || !body.location || !body.startAt) {
@@ -26,6 +29,7 @@ export default defineEventHandler(async (event) => {
         season: body.season || new Date().getFullYear(),
       })
       .returning()
+    log.set({ race: { id: created.id, name: created.name } })
     return created
   }
 

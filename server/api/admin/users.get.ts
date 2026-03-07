@@ -2,6 +2,7 @@ import { db, schema } from 'hub:db'
 import { sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const users = await db
@@ -16,5 +17,6 @@ export default defineEventHandler(async (event) => {
     .from(schema.user)
     .orderBy(schema.user.createdAt)
 
+  log.set({ users: { count: users.length } })
   return users
 })

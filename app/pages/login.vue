@@ -7,22 +7,17 @@ const toast = useToast()
 
 const route = useRoute()
 
-const step = ref<'email' | 'otp'>('email')
-const email = ref('')
-const name = ref('')
-const otp = ref('')
-const loading = ref(false)
+const queryEmail = route.query.email as string | undefined
+const queryCode = route.query.code as string | undefined
+const isMagicLink = !!(queryEmail && queryCode)
 
-onMounted(async () => {
-  const queryEmail = route.query.email as string
-  const queryCode = route.query.code as string
-  if (queryEmail && queryCode) {
-    email.value = queryEmail
-    otp.value = queryCode
-    step.value = 'otp'
-    await nextTick()
-    verifyCode()
-  }
+const step = ref<'email' | 'otp' | 'verifying'>(isMagicLink ? 'verifying' : 'email')
+const email = ref(queryEmail || '')
+const otp = ref(queryCode || '')
+const loading = ref(isMagicLink)
+
+onMounted(() => {
+  if (isMagicLink) verifyCode()
 })
 
 async function sendCode() {
@@ -77,15 +72,18 @@ async function verifyCode() {
       </div>
 
       <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <!-- Step 1: Email -->
-        <form v-if="step === 'email'" class="flex flex-col gap-4" @submit.prevent="sendCode">
+        <div v-if="step === 'verifying'" class="py-8 text-center">
+          <UIcon name="i-lucide-loader" class="size-6 animate-spin mx-auto mb-3 text-zinc-400" />
+          <p class="text-sm text-zinc-400">Signing you in...</p>
+        </div>
+
+        <form v-else-if="step === 'email'" class="flex flex-col gap-4" @submit.prevent="sendCode">
           <UFormField label="Email" name="email" required>
             <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" class="w-full" autofocus />
           </UFormField>
           <UButton type="submit" label="Send login code" icon="i-lucide-mail" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
         </form>
 
-        <!-- Step 2: OTP -->
         <form v-else class="flex flex-col gap-4" @submit.prevent="verifyCode">
           <p class="text-sm text-zinc-400">
             Code sent to <span class="text-white font-medium">{{ email }}</span>

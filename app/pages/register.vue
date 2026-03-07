@@ -2,7 +2,7 @@
 definePageMeta({ auth: 'guest' })
 useSeoMeta({ title: 'Join the League — F1 League' })
 
-const { client } = useUserSession()
+const { client, fetchSession } = useUserSession()
 const toast = useToast()
 
 const step = ref<'info' | 'otp'>('info')
@@ -38,6 +38,16 @@ async function verifyAndRegister() {
       email: email.value,
       otp: otp.value,
     })
+    await fetchSession({ force: true })
+    if (name.value) {
+      try {
+        await $fetch('/api/user/profile', { method: 'POST', body: { name: name.value } })
+        await fetchSession({ force: true })
+      }
+      catch (e) {
+        log.error({ action: 'set_name_failed', error: String(e) })
+      }
+    }
     navigateTo('/')
   }
   catch {
@@ -63,7 +73,6 @@ async function verifyAndRegister() {
       </div>
 
       <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <!-- Step 1: Name + Email -->
         <form v-if="step === 'info'" class="flex flex-col gap-4" @submit.prevent="sendCode">
           <UFormField label="Name" name="name" required>
             <UInput v-model="name" placeholder="Your name" size="lg" class="w-full" autofocus />
@@ -74,7 +83,6 @@ async function verifyAndRegister() {
           <UButton type="submit" label="Send verification code" icon="i-lucide-mail" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
         </form>
 
-        <!-- Step 2: OTP -->
         <form v-else class="flex flex-col gap-4" @submit.prevent="verifyAndRegister">
           <p class="text-sm text-zinc-400">
             Code sent to <span class="text-white font-medium">{{ email }}</span>

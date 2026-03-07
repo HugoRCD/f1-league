@@ -17,7 +17,7 @@ async function refreshAll() {
   await Promise.all([refreshRaces(), refreshDrivers(), refreshStats(), refreshUsers()])
 }
 
-// --- Seed ---
+
 const seeding = ref(false)
 async function seedData() {
   seeding.value = true
@@ -32,7 +32,7 @@ async function seedData() {
   }
 }
 
-// --- Simulate ---
+
 const simulating = ref(false)
 const simulateRaces = ref(5)
 async function simulateChampionship() {
@@ -48,7 +48,7 @@ async function simulateChampionship() {
   }
 }
 
-// --- Reset ---
+
 const resetting = ref(false)
 async function resetSimulation() {
   resetting.value = true
@@ -76,7 +76,7 @@ async function resetAllData() {
   }
 }
 
-// --- Results entry ---
+
 const selectedRaceId = ref('')
 const resultPositions = ref<(string | null)[]>(Array.from({ length: 10 }, () => null))
 const savingResult = ref(false)
@@ -109,7 +109,7 @@ async function submitResult() {
   }
 }
 
-// --- Import from F1 API ---
+
 const importing = ref(false)
 const selectedRound = computed(() => {
   if (!selectedRaceId.value || !races.value) return null
@@ -141,7 +141,7 @@ async function importFromApi() {
   }
 }
 
-// --- Driver management ---
+
 const newDriver = reactive({ firstName: '', lastName: '', number: 0, teamId: '' })
 const savingDriver = ref(false)
 
@@ -173,7 +173,7 @@ async function toggleDriver(id: string) {
   await refreshDrivers()
 }
 
-// --- Race management ---
+
 const newRace = reactive({ name: '', location: '', startAt: '', season: new Date().getFullYear() })
 const savingRace = ref(false)
 const editingRace = ref<{ id: string, name: string, location: string, startAt: string } | null>(null)
@@ -218,7 +218,7 @@ async function saveEditRace() {
   }
 }
 
-// --- User management ---
+
 const editingUser = ref<{ id: string, name: string, email: string } | null>(null)
 const savingUser = ref(false)
 
@@ -262,7 +262,7 @@ async function deleteUser(userId: string, name: string) {
   }
 }
 
-// --- Scoring config ---
+
 const { data: scoringConfig, refresh: refreshScoring } = useFetch('/api/admin/scoring')
 const editedScoring = ref<Record<string, number> | null>(null)
 const savingScoring = ref(false)
@@ -288,7 +288,7 @@ async function saveScoring() {
   }
 }
 
-// --- Notifications ---
+
 const { data: notifSettings, refresh: refreshNotif } = useFetch('/api/admin/notifications')
 
 async function toggleGlobalNotifications() {
@@ -342,10 +342,8 @@ const tabs = [
 
     <ClientOnly>
       <UTabs v-model="tab" :items="tabs">
-        <!-- SEED & TEST -->
         <template #seed>
           <div class="py-6 flex flex-col gap-6">
-            <!-- Setup -->
             <div>
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Setup</h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
@@ -362,7 +360,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Testing -->
             <div>
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Testing</h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
@@ -386,7 +383,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Danger zone -->
             <div>
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Danger zone</h3>
               <div class="rounded-xl border border-red-900/20 bg-red-950/10 overflow-hidden">
@@ -415,7 +411,6 @@ const tabs = [
           </div>
         </template>
 
-        <!-- USERS -->
         <template #users>
           <div class="py-6 flex flex-col gap-2">
             <div
@@ -424,7 +419,6 @@ const tabs = [
               class="rounded-xl border bg-zinc-900/50 p-4"
               :class="u.id === currentUser?.id ? 'border-primary/30' : 'border-zinc-800'"
             >
-              <!-- Edit mode -->
               <template v-if="editingUser?.id === u.id">
                 <div class="flex flex-col gap-3">
                   <div class="grid grid-cols-2 gap-3">
@@ -442,7 +436,6 @@ const tabs = [
                 </div>
               </template>
 
-              <!-- Display mode -->
               <template v-else>
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex items-center gap-3 min-w-0">
@@ -495,7 +488,6 @@ const tabs = [
           </div>
         </template>
 
-        <!-- RESULTS -->
         <template #results>
           <div class="py-6 flex flex-col gap-6 max-w-xl">
             <div>
@@ -558,7 +550,6 @@ const tabs = [
           </div>
         </template>
 
-        <!-- DRIVERS -->
         <template #drivers>
           <div class="py-6 flex flex-col gap-8">
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
@@ -601,7 +592,6 @@ const tabs = [
           </div>
         </template>
 
-        <!-- RACES -->
         <template #races>
           <div class="py-6 flex flex-col gap-6">
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
@@ -628,7 +618,6 @@ const tabs = [
                 :key="r.id"
                 class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4"
               >
-                <!-- Edit mode -->
                 <template v-if="editingRace?.id === r.id">
                   <div class="flex flex-col gap-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -649,7 +638,6 @@ const tabs = [
                   </div>
                 </template>
 
-                <!-- Display mode -->
                 <template v-else>
                   <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3 min-w-0">
@@ -688,10 +676,8 @@ const tabs = [
             </div>
           </div>
         </template>
-        <!-- SCORING -->
         <template #scoring>
           <div v-if="scoringConfig" class="py-6 flex flex-col gap-6">
-            <!-- Points section -->
             <div>
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
                 Points per position
@@ -725,7 +711,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Timing section -->
             <div>
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
                 Prediction window
@@ -770,7 +755,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex gap-2">
               <template v-if="editedScoring">
                 <UButton label="Save" icon="i-lucide-check" :loading="savingScoring" size="sm" @click="saveScoring" />
@@ -779,7 +763,6 @@ const tabs = [
               <UButton v-else label="Edit" icon="i-lucide-pencil" size="sm" variant="outline" @click="startEditScoring" />
             </div>
 
-            <!-- Notifications -->
             <div v-if="notifSettings">
               <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Email reminders</h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">

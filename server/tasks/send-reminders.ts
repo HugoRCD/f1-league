@@ -1,5 +1,6 @@
-import { eq, and, gte, lte, notInArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+import { createRequestLogger } from 'evlog'
 import { sendReminderEmail } from '../services/resend'
 import { getNotificationSettings } from '../utils/notifications'
 
@@ -9,8 +10,14 @@ export default defineTask({
     description: 'Send prediction reminder emails for upcoming races',
   },
   async run() {
+    const log = createRequestLogger({ task: 'send-reminders' })
+
     const settings = await getNotificationSettings()
-    if (!settings.enabled) return { result: 'disabled' }
+    if (!settings.enabled) {
+      log.set({ result: 'disabled' })
+      log.emit()
+      return { result: 'disabled' }
+    }
 
     const config = await getScoringConfig()
     const now = new Date()
@@ -27,7 +34,13 @@ export default defineTask({
     const optedOutIds = new Set(optedOut.map(o => o.userId))
     const eligibleUsers = allUsers.filter(u => !optedOutIds.has(u.id))
 
-    if (eligibleUsers.length === 0) return { result: 'no eligible users' }
+    log.set({ users: { total: allUsers.length, eligible: eligibleUsers.length, optedOut: optedOutIds.size } })
+
+    if (eligibleUsers.length === 0) {
+      log.set({ result: 'no eligible users' })
+      log.emit()
+      return { result: 'no eligible users' }
+    }
 
     const races = await db
       .select()
@@ -68,6 +81,8 @@ export default defineTask({
       }
     }
 
+    log.set({ reminders: { sent } })
+    log.emit()
     return { result: `sent ${sent} reminders` }
   },
 })

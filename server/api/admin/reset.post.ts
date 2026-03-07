@@ -4,9 +4,11 @@ import { db, schema } from 'hub:db'
 const FAKE_EMAILS = ['alice@test.com', 'bob@test.com', 'charlie@test.com', 'diana@test.com', 'eve@test.com']
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{ target: 'simulation' | 'all' }>(event)
+  log.set({ admin: { action: 'reset', target: body.target } })
 
   if (body.target === 'simulation') {
     const fakeUsers = await db
@@ -27,6 +29,7 @@ export default defineEventHandler(async (event) => {
 
     await db.delete(schema.raceResult)
 
+    log.set({ reset: { deletedUsers: fakeUserIds.length, clearedResults: true } })
     return { deletedUsers: fakeUserIds.length, clearedResults: true }
   }
 

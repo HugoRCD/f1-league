@@ -158,7 +158,6 @@ const teamColorMap: Record<string, string> = {
     </div>
 
     <template v-else-if="race">
-      <!-- Race Header -->
       <NuxtLink to="/races" class="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors mb-4">
         <UIcon name="i-lucide-arrow-left" class="size-4" />
         Back to calendar
@@ -201,11 +200,8 @@ const teamColorMap: Record<string, string> = {
         </div>
       </div>
 
-      <!-- Two-column layout -->
       <div class="grid lg:grid-cols-[1fr_320px] gap-8">
-        <!-- Main column -->
         <div>
-          <!-- Not yet open -->
           <div v-if="!isLocked && !isOpen" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
             <UIcon name="i-lucide-clock" class="size-10 mx-auto mb-3 text-zinc-600" />
             <p class="font-bold mb-1">
@@ -217,7 +213,6 @@ const teamColorMap: Record<string, string> = {
             </p>
           </div>
 
-          <!-- Prediction Form -->
           <div v-if="canPredict" class="mb-8">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-lg font-black uppercase tracking-tight">
@@ -286,7 +281,6 @@ const teamColorMap: Record<string, string> = {
               </div>
             </div>
 
-            <!-- Available drivers -->
             <div v-if="availableDrivers.length > 0">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">
@@ -334,7 +328,6 @@ const teamColorMap: Record<string, string> = {
             </div>
           </div>
 
-          <!-- My prediction (locked) -->
           <div v-if="isLocked && myPrediction" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">
               Your Prediction
@@ -347,7 +340,6 @@ const teamColorMap: Record<string, string> = {
             </div>
           </div>
 
-          <!-- Official Result -->
           <div v-if="race.result" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">
               Official Result
@@ -360,7 +352,6 @@ const teamColorMap: Record<string, string> = {
             </div>
           </div>
 
-          <!-- Race Standings -->
           <div v-if="standings?.standings" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">
               Race Standings
@@ -377,10 +368,17 @@ const teamColorMap: Record<string, string> = {
             </div>
           </div>
 
-          <!-- All Predictions -->
+          <div v-if="canPredict" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-5 text-center">
+            <UIcon name="i-lucide-eye-off" class="size-8 mx-auto mb-2 text-zinc-600" />
+            <p class="text-sm text-zinc-400">
+              Everyone's predictions will be revealed once the race is locked.
+            </p>
+          </div>
+
           <div v-if="allPredictions?.length" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">
               All Predictions
+              <span class="text-sm font-normal text-zinc-500 ml-2">{{ allPredictions.length }} player{{ allPredictions.length > 1 ? 's' : '' }}</span>
             </h2>
             <div class="grid gap-4" :class="allPredictions.length > 1 ? 'sm:grid-cols-2' : ''">
               <div v-for="pred in allPredictions" :key="pred.id" class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -396,9 +394,7 @@ const teamColorMap: Record<string, string> = {
           </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="flex flex-col gap-3">
-          <!-- Fill button -->
           <button
             v-if="canPredict && hasQuali"
             class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-900/50 text-xs font-medium text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
@@ -408,7 +404,6 @@ const teamColorMap: Record<string, string> = {
             Auto-fill from starting grid
           </button>
 
-          <!-- Tabs: Grid / Championship -->
           <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
             <div class="flex border-b border-zinc-800">
               <button
@@ -428,7 +423,6 @@ const teamColorMap: Record<string, string> = {
               </button>
             </div>
 
-            <!-- Grid content -->
             <div v-if="sidebarTab === 'grid' && hasQuali">
               <div
                 v-for="(entry, index) in (qualifyingGrid as any[])"
@@ -446,7 +440,6 @@ const teamColorMap: Record<string, string> = {
               </div>
             </div>
 
-            <!-- Championship content -->
             <div v-if="sidebarTab === 'championship' && (driverStandings as any[])?.length">
               <div v-for="(d, i) in (driverStandings as any[]).slice(0, 22)" :key="i" class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0">
                 <span class="w-4 text-right text-[10px] font-black tabular-nums" :class="i < 3 ? 'text-yellow-500' : 'text-zinc-600'">{{ d.position }}</span>

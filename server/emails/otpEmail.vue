@@ -65,10 +65,10 @@ defineProps({
             <Button
               v-if="magicLink"
               :href="magicLink"
-              class="inline-block rounded-md px-5 py-2.5 text-sm font-medium no-underline"
-              style="background-color: #ffffff; color: #010101;"
+              class="inline-block rounded-md px-6 py-3 text-sm font-semibold no-underline"
+              style="background-color: #E10600; color: #ffffff;"
             >
-              Sign in automatically
+              Sign in to F1 League →
             </Button>
           </Section>
 

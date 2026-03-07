@@ -13,7 +13,6 @@ const { data: leaderboard, status } = useCachedFetch('/api/leaderboard')
       <h1 class="text-2xl font-black uppercase tracking-tight mt-1">Championship Standings</h1>
     </div>
 
-    <!-- Skeleton loading -->
     <div v-if="status === 'pending'" class="flex flex-col gap-4">
       <div class="grid grid-cols-3 gap-3 mb-4">
         <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-2xl" />
@@ -28,7 +27,6 @@ const { data: leaderboard, status } = useCachedFetch('/api/leaderboard')
     </div>
 
     <template v-else>
-      <!-- Podium top 3 -->
       <div v-if="leaderboard.length >= 3" class="grid grid-cols-3 gap-3 mb-8">
         <div class="rounded-2xl border border-zinc-400/20 bg-zinc-900/50 p-5 text-center mt-8">
           <div class="size-12 mx-auto rounded-full bg-zinc-400/20 ring-2 ring-zinc-400/30 flex items-center justify-center text-xl font-black text-zinc-300 mb-3">2</div>
@@ -51,7 +49,6 @@ const { data: leaderboard, status } = useCachedFetch('/api/leaderboard')
         </div>
       </div>
 
-      <!-- Full standings -->
       <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-4 py-2.5 border-b border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
           <span class="w-8">Pos</span>

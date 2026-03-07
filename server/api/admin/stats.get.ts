@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const [teams] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.team)
@@ -10,11 +11,13 @@ export default defineEventHandler(async (event) => {
   const [results] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.raceResult)
   const [predictions] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.prediction)
 
-  return {
+  const stats = {
     teams: teams.count,
     drivers: drivers.count,
     races: races.count,
     results: results.count,
     predictions: predictions.count,
   }
+  log.set({ stats })
+  return stats
 })

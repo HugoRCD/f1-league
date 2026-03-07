@@ -2,8 +2,11 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   const { user } = await requireUserSession(event)
+  log.set({ user: { id: user.id } })
   const body = await readBody<{ enabled: boolean }>(event)
+  log.set({ notifications: { enabled: body.enabled } })
 
   const [existing] = await db
     .select()

@@ -2,6 +2,7 @@ import type { ScoringConfig } from '../../utils/scoring'
 import { kv } from 'hub:kv'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<Partial<ScoringConfig>>(event)
@@ -19,5 +20,6 @@ export default defineEventHandler(async (event) => {
   await kv.set('scoring:config', updated)
   invalidateScoringConfigCache()
 
+  log.set({ scoring: { updated } })
   return updated
 })

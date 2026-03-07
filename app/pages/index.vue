@@ -60,7 +60,6 @@ const teamColorMap: Record<string, string> = {
 </script>
 
 <template>
-  <!-- HERO - Logged out -->
   <div v-if="!loggedIn">
     <div class="relative overflow-hidden">
       <div class="absolute inset-0 bg-linear-to-br from-[#E10600]/15 via-zinc-950 to-zinc-950" />
@@ -88,48 +87,8 @@ const teamColorMap: Record<string, string> = {
       </UContainer>
     </div>
 
-    <div class="border-t border-zinc-800/50">
-      <UContainer class="py-16">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="text-center">
-            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
-              <UIcon name="i-lucide-list-ordered" class="size-6 text-[#E10600]" />
-            </div>
-            <h3 class="font-bold mb-1">
-              Predict Top 10
-            </h3>
-            <p class="text-sm text-zinc-500">
-              Submit your predicted finishing order before each race locks.
-            </p>
-          </div>
-          <div class="text-center">
-            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
-              <UIcon name="i-lucide-calculator" class="size-6 text-[#E10600]" />
-            </div>
-            <h3 class="font-bold mb-1">
-              Score Points
-            </h3>
-            <p class="text-sm text-zinc-500">
-              Earn up to 5 points per position based on accuracy.
-            </p>
-          </div>
-          <div class="text-center">
-            <div class="size-12 mx-auto mb-4 rounded-xl bg-[#E10600]/10 flex items-center justify-center">
-              <UIcon name="i-lucide-trophy" class="size-6 text-[#E10600]" />
-            </div>
-            <h3 class="font-bold mb-1">
-              Win the Season
-            </h3>
-            <p class="text-sm text-zinc-500">
-              Climb the leaderboard and crown the champion at season's end.
-            </p>
-          </div>
-        </div>
-      </UContainer>
-    </div>
   </div>
 
-  <!-- DASHBOARD - Logged in -->
   <UContainer v-else class="py-8">
     <div class="flex items-center justify-between mb-8">
       <div>
@@ -150,7 +109,6 @@ const teamColorMap: Record<string, string> = {
       </div>
     </div>
 
-    <!-- Skeleton loading -->
     <div v-if="racesStatus === 'pending'" class="grid gap-6 lg:grid-cols-2">
       <div v-for="i in 2" :key="i" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-zinc-800" />
@@ -165,7 +123,6 @@ const teamColorMap: Record<string, string> = {
     </div>
 
     <div v-else class="grid gap-6 lg:grid-cols-2">
-      <!-- Next race card -->
       <div v-if="nextRace" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-[#E10600]" />
         <div class="p-6">
@@ -206,7 +163,6 @@ const teamColorMap: Record<string, string> = {
         </div>
       </div>
 
-      <!-- Last result card -->
       <div v-if="lastRaceWithResult" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-linear-to-r from-yellow-500 via-zinc-400 to-amber-700" />
         <div class="p-6">
@@ -235,7 +191,6 @@ const teamColorMap: Record<string, string> = {
         </div>
       </div>
 
-      <!-- Starting grid card (when no results yet but qualifying data available) -->
       <div v-else-if="nextRaceGrid.length > 0" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="h-1 bg-linear-to-r from-zinc-600 to-zinc-800" />
         <div class="p-5">
@@ -272,7 +227,6 @@ const teamColorMap: Record<string, string> = {
       </div>
     </div>
 
-    <!-- Season leaderboard preview -->
     <div v-if="leaderboardStatus === 'pending'" class="mt-8">
       <USkeleton class="h-6 w-40 mb-4" />
       <div class="flex flex-col gap-2">
@@ -302,9 +256,7 @@ const teamColorMap: Record<string, string> = {
       </div>
     </div>
 
-    <!-- F1 News + Driver Championship -->
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
-      <!-- F1 News -->
       <div v-if="(f1News as any[])?.length">
         <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">
           Latest F1 News
@@ -327,7 +279,6 @@ const teamColorMap: Record<string, string> = {
         </div>
       </div>
 
-      <!-- Driver Championship -->
       <div v-if="(driverStandings as any[])?.length">
         <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">
           F1 Driver Championship

@@ -3,6 +3,7 @@ import { db, schema } from 'hub:db'
 import { SEASON, seedTeams, seedDrivers, seedRaces } from '../../utils/seed'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const upsertedTeams = await db
@@ -57,9 +58,11 @@ export default defineEventHandler(async (event) => {
     })
     .returning()
 
-  return {
+  const result = {
     teams: upsertedTeams.length,
     drivers: upsertedDrivers.length,
     races: upsertedRaces.length,
   }
+  log.set({ seed: result })
+  return result
 })

@@ -2,14 +2,16 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{ racesToSimulate?: number }>(event)
   const racesToSimulate = body.racesToSimulate ?? 5
+  log.set({ simulate: { racesToSimulate } })
 
   const allDrivers = await db.select().from(schema.driver).where(eq(schema.driver.active, true))
   if (allDrivers.length < 10) {
-    throw createError({ statusCode: 400, message: 'Need at least 10 active drivers. Seed the season first.' })
+    throw createError({ statusCode: 400, message: 'Need at least 10 active drivers', why: `Only ${allDrivers.length} active drivers found in the database`, fix: 'Seed the season first using the admin panel' })
   }
 
   const driverIds = allDrivers.map(d => d.id)
@@ -43,7 +45,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (userIds.length === 0) {
-    throw createError({ statusCode: 500, message: 'Failed to create any test users' })
+    throw createError({ statusCode: 500, message: 'Failed to create any test users', why: 'All user creation attempts failed during simulation setup' })
   }
 
   const races = await db
@@ -92,9 +94,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return {
+  const result = {
     users: userIds.length,
     races: resultsCreated,
     predictions: predictionsCreated,
   }
+  log.set({ simulate: { result } })
+  return result
 })

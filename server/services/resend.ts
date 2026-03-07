@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { render } from '@vue-email/render'
+import { createRequestLogger } from 'evlog'
 
 let _resend: Resend | null = null
 
@@ -20,8 +21,8 @@ function getSender(): string {
 export async function sendOtpEmail(to: string, otp: string, magicLink?: string) {
   const resend = getResend()
   if (!resend) {
-    console.log(`[DEV] OTP for ${to}: ${otp}`)
-    if (magicLink) console.log(`[DEV] Magic link: ${magicLink}`)
+    const log = createRequestLogger({ email: { type: 'otp', to, devMode: true } })
+    log.emit()
     return
   }
 
@@ -38,7 +39,8 @@ export async function sendOtpEmail(to: string, otp: string, magicLink?: string) 
 export async function sendWelcomeEmail(to: string, name: string) {
   const resend = getResend()
   if (!resend) {
-    console.log(`[DEV] Welcome email for ${name} (${to})`)
+    const log = createRequestLogger({ email: { type: 'welcome', to, name, devMode: true } })
+    log.emit()
     return
   }
 
@@ -55,7 +57,8 @@ export async function sendWelcomeEmail(to: string, name: string) {
 export async function sendReminderEmail(to: string, data: { name: string, raceName: string, raceLocation: string, lockTime: string, appUrl: string }) {
   const resend = getResend()
   if (!resend) {
-    console.log(`[DEV] Reminder for ${data.name} (${to}): ${data.raceName}`)
+    const log = createRequestLogger({ email: { type: 'reminder', to, raceName: data.raceName, devMode: true } })
+    log.emit()
     return
   }
 

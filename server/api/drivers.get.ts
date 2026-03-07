@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-export default defineEventHandler(async () => {
-  return db
+export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
+  const drivers = await db
     .select({
       id: schema.driver.id,
       firstName: schema.driver.firstName,
@@ -16,4 +17,6 @@ export default defineEventHandler(async () => {
     .from(schema.driver)
     .innerJoin(schema.team, eq(schema.driver.teamId, schema.team.id))
     .orderBy(schema.team.name, schema.driver.lastName)
+  log.set({ drivers: { count: drivers.length } })
+  return drivers
 })

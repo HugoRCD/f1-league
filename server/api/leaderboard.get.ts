@@ -2,9 +2,11 @@ import { eq, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event)
   const query = getQuery(event)
   const season = Number(query.season) || new Date().getFullYear()
+  log.set({ season })
 
   const races = await db
     .select({ id: schema.race.id })
@@ -48,5 +50,7 @@ export default defineEventHandler(async (event) => {
     return { raceId: result.raceId, standings }
   })
 
-  return calculateSeasonStandings(allRaceStandings)
+  const seasonStandings = calculateSeasonStandings(allRaceStandings)
+  log.set({ leaderboard: { players: seasonStandings.length, races: results.length } })
+  return seasonStandings
 })

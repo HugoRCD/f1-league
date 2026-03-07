@@ -2,9 +2,11 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{ raceId: string, positions: string[] }>(event)
+  log.set({ race: { id: body.raceId } })
 
   if (!body.raceId) {
     throw createError({ statusCode: 400, message: 'raceId is required' })
@@ -40,6 +42,7 @@ export default defineEventHandler(async (event) => {
       .set({ positions: body.positions })
       .where(eq(schema.raceResult.id, existing.id))
       .returning()
+    log.set({ result: { action: 'updated', id: updated.id } })
     return updated
   }
 
@@ -50,6 +53,6 @@ export default defineEventHandler(async (event) => {
       positions: body.positions,
     })
     .returning()
-
+  log.set({ result: { action: 'created', id: created.id } })
   return created
 })

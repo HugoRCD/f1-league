@@ -1,4 +1,7 @@
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
-  return getScoringConfig()
+  const config = await getScoringConfig()
+  log.set({ scoring: config })
+  return config
 })

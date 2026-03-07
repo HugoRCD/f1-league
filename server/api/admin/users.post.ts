@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   const { user: currentUser } = await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{
@@ -15,6 +16,8 @@ export default defineEventHandler(async (event) => {
   if (!body.userId) {
     throw createError({ statusCode: 400, message: 'userId is required' })
   }
+
+  log.set({ admin: { action: body.action, targetUserId: body.userId } })
 
   if (body.action === 'update') {
     const updates: Record<string, unknown> = {}

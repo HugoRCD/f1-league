@@ -2,7 +2,9 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   const raceId = getRouterParam(event, 'raceId')!
+  log.set({ race: { id: raceId } })
 
   const config = await getScoringConfig()
 

@@ -6,14 +6,16 @@ function normalize(s: string): string {
 }
 
 export default defineEventHandler(async (event) => {
+  const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{ round: number }>(event)
   if (!body.round) throw createError({ statusCode: 400, message: 'round is required' })
+  log.set({ import: { round: body.round } })
 
   const raceResults = await $fetch<any[]>(`/api/f1/race/${body.round}`, { baseURL: getRequestURL(event).origin })
   if (!raceResults?.length) {
-    throw createError({ statusCode: 404, message: 'No race results available from F1 API for this round' })
+    throw createError({ statusCode: 404, message: 'No race results available from F1 API for this round', why: `Round ${body.round} returned no results from the F1 API`, fix: 'Check that the round number is correct and the race has been completed' })
   }
 
   const allDrivers = await db.select().from(schema.driver).where(eq(schema.driver.active, true))
@@ -31,9 +33,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const unmatchedCount = mapped.filter(m => !m.driverId).length
+  log.set({ import: { mapped: mapped.length, unmatchedCount } })
   return {
     results: mapped,
     positions: mapped.map(m => m.driverId),
-    unmatchedCount: mapped.filter(m => !m.driverId).length,
+    unmatchedCount,
   }
 })
