@@ -19,7 +19,24 @@ export interface League {
 }
 
 export function useLeagues() {
-  return useFetch<League[]>('/api/leagues', { key: 'leagues' })
+  const { loggedIn } = useUserSession()
+
+  const result = useFetch<League[]>('/api/leagues', {
+    key: 'leagues',
+    immediate: loggedIn.value,
+    watch: false,
+  })
+
+  if (import.meta.client) {
+    const stop = watch(loggedIn, (isLoggedIn) => {
+      if (isLoggedIn && !result.data.value) {
+        result.refresh()
+        stop()
+      }
+    }, { immediate: true })
+  }
+
+  return result
 }
 
 const lastLeagueSlug = import.meta.client ? useLocalStorage('f1-last-league', '') : ref('')

@@ -78,7 +78,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/': { isr: { expiration: 60 } },
     '/races': { isr: { expiration: 30 } },
     '/settings': { auth: 'user' },
     '/leagues/**': { auth: 'user' },
