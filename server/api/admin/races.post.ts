@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
         season: body.season || new Date().getFullYear(),
       })
       .returning()
-    log.set({ race: { id: created.id, name: created.name } })
+    log.set({ race: { id: created!.id, name: created!.name } })
     return created
   }
 

@@ -52,7 +52,7 @@ export function calculateRaceScore(prediction: string[], result: string[], confi
   let exactHits = 0
 
   for (let i = 0; i < prediction.length; i++) {
-    const driverId = prediction[i]
+    const driverId = prediction[i]!
     const actualIndex = result.indexOf(driverId)
 
     if (actualIndex === -1) {
@@ -67,9 +67,13 @@ export function calculateRaceScore(prediction: string[], result: string[], confi
     if (d === 0) {
       points = config.exact
       exactHits++
-    } else if (d === 1) points = config.offBy1
-    else if (d === 2) points = config.offBy2
-    else points = config.offBy3Plus
+    } else if (d === 1) {
+      points = config.offBy1 
+    } else if (d === 2) {
+      points = config.offBy2 
+    } else {
+      points = config.offBy3Plus 
+    }
 
     total += points
     details.push({ driverId, predicted: i + 1, actual: actualIndex + 1, points })

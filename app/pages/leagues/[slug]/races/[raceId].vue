@@ -149,7 +149,7 @@ const predictionScoring = computed(() => {
   let exactHits = 0
 
   for (let i = 0; i < predicted.length; i++) {
-    const driverId = predicted[i]
+    const driverId = predicted[i]!
     const actualIndex = result.indexOf(driverId)
 
     if (actualIndex === -1) {
@@ -191,7 +191,7 @@ function scorePrediction(positions: string[]) {
   let exactHits = 0
 
   for (let i = 0; i < positions.length; i++) {
-    const driverId = positions[i]
+    const driverId = positions[i]!
     const actualIndex = result.indexOf(driverId)
 
     if (actualIndex === -1) {
@@ -506,14 +506,14 @@ const teamColorMap: Record<string, string> = {
                 <div class="flex-1 min-w-0">
                   <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" />
                 </div>
-                <template v-if="predictionScoring">
+                <template v-if="predictionScoring?.details?.[index]">
                   <span
                     class="text-[10px] font-bold px-1.5 py-0.5 rounded tabular-nums shrink-0"
-                    :class="scoringColor(predictionScoring.details[index]?.diff)"
+                    :class="scoringColor(predictionScoring.details[index]?.diff ?? null)"
                   >
-                    {{ predictionScoring.details[index]?.actual ? `P${predictionScoring.details[index].actual}` : '—' }}
+                    {{ predictionScoring.details[index]?.actual ? `P${predictionScoring.details[index]!.actual}` : '—' }}
                   </span>
-                  <span class="text-xs font-bold tabular-nums w-6 text-right shrink-0" :class="predictionScoring.details[index]?.points > 0 ? 'text-white' : 'text-zinc-600'">
+                  <span class="text-xs font-bold tabular-nums w-6 text-right shrink-0" :class="(predictionScoring.details[index]?.points ?? 0) > 0 ? 'text-white' : 'text-zinc-600'">
                     +{{ predictionScoring.details[index]?.points ?? 0 }}
                   </span>
                 </template>
@@ -560,12 +560,12 @@ const teamColorMap: Record<string, string> = {
               Race Standings
             </h2>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <template v-for="(player, index) in (standings as any).standings" :key="player.userId">
+              <template v-for="(player, index) in ((standings as any).standings as any[])" :key="player.userId">
                 <div
                   class="flex items-center gap-4 px-4 py-3 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-800/30 transition-colors"
                   @click="expandedStanding = expandedStanding === player.userId ? null : player.userId"
                 >
-                  <PositionBadge :position="index + 1" size="sm" />
+                  <PositionBadge :position="(index as number) + 1" size="sm" />
                   <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
                   <span class="flex-1 font-semibold">{{ player.userName }}</span>
                   <div class="flex items-center gap-4 text-sm">
@@ -628,7 +628,7 @@ const teamColorMap: Record<string, string> = {
                       class="text-[10px] font-bold px-1 py-0.5 rounded tabular-nums shrink-0"
                       :class="scoringColor(scorePrediction(pred.positions as string[])?.details[index]?.diff ?? null)"
                     >
-                      {{ scorePrediction(pred.positions as string[])?.details[index]?.actual ? `P${scorePrediction(pred.positions as string[])!.details[index].actual}` : '—' }}
+                      {{ scorePrediction(pred.positions as string[])?.details[index as number]?.actual ? `P${scorePrediction(pred.positions as string[])!.details[index as number]!.actual}` : '—' }}
                     </span>
                     <span class="text-[10px] font-bold tabular-nums w-5 text-right shrink-0" :class="(scorePrediction(pred.positions as string[])?.details[index]?.points ?? 0) > 0 ? 'text-white' : 'text-zinc-700'">
                       +{{ scorePrediction(pred.positions as string[])?.details[index]?.points ?? 0 }}

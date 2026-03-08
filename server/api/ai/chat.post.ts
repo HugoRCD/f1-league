@@ -10,5 +10,5 @@ export default defineEventHandler(async (event) => {
 
   const result = await f1Agent.stream({ messages })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 })

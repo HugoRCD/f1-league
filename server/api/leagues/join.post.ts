@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   log.set({ user: { id: user.id }, action: 'join-league' })
 
   if (!body.inviteCode?.trim()) {
-    throw createError({ statusCode: 400, message: 'Invite code is required.', why: 'No invite code was provided', fix: 'Enter the invite code shared by a league admin' })
+    throw createError({ statusCode: 400, message: 'Invite code is required.' })
   }
 
   const code = body.inviteCode.trim()
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     .limit(1)
 
   if (!league) {
-    throw createError({ statusCode: 404, message: 'This invite code is invalid or has expired.', why: `No league found with invite code "${code}"`, fix: 'Double-check the code or ask the league admin for a new one' })
+    throw createError({ statusCode: 404, message: 'This invite code is invalid or has expired.' })
   }
 
   log.set({ league: { id: league.id, name: league.name } })
@@ -54,9 +54,9 @@ export default defineEventHandler(async (event) => {
     log.set({ db: { code: dbCode, detail } })
 
     if (dbCode === '23503') {
-      throw createError({ statusCode: 401, message: 'Your session has expired.', why: `User ID ${user.id} does not exist in the database`, fix: 'Sign out and sign in again to refresh your session' })
+      throw createError({ statusCode: 401, message: 'Your session has expired. Sign out and sign in again.' })
     }
-    throw createError({ statusCode: 500, message: 'Failed to join the league.', why: `Database error: ${detail}`, fix: 'Try again or contact support' })
+    throw createError({ statusCode: 500, message: 'Failed to join the league. Try again.' })
   }
 
   return { league: { id: league.id, name: league.name, slug: league.slug } }

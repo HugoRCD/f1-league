@@ -862,10 +862,10 @@ const tabs = [
                   <div class="flex flex-col gap-3">
                     <div class="grid grid-cols-2 gap-3">
                       <UFormField label="Name">
-                        <UInput v-model="editingUser.name" size="sm" class="w-full" />
+                        <UInput v-model="editingUser!.name" size="sm" class="w-full" />
                       </UFormField>
                       <UFormField label="Email">
-                        <UInput v-model="editingUser.email" size="sm" class="w-full" />
+                        <UInput v-model="editingUser!.email" size="sm" class="w-full" />
                       </UFormField>
                     </div>
                     <div class="flex gap-2">

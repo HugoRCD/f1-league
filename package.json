@@ -2,15 +2,15 @@
   "name": "f1-league",
   "private": true,
   "type": "module",
-  "description": "F1 prediction league app for friends",
+  "description": "Create leagues, predict the F1 Top 10, and compete with friends across the season",
   "author": "HugoRCD",
   "funding": "https://github.com/sponsors/HugoRCD",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HugoRCD/default-repository.git"
+    "url": "git+https://github.com/HugoRCD/f1-championship.git"
   },
   "bugs": {
-    "url": "https://github.com/HugoRCD/default-repository/issues"
+    "url": "https://github.com/HugoRCD/f1-championship/issues"
   },
   "scripts": {
     "build": "nuxt build",

@@ -8,12 +8,12 @@ export default defineEventHandler(async (event) => {
   log.set({ user: { id: user.id }, action: 'create-league' })
 
   if (!body.name || body.name.trim().length < 2) {
-    throw createError({ statusCode: 400, message: 'League name must be at least 2 characters.', why: 'The submitted name is too short', fix: 'Enter a name with at least 2 characters' })
+    throw createError({ statusCode: 400, message: 'League name must be at least 2 characters.' })
   }
 
   const name = body.name.trim()
   if (name.length > 50) {
-    throw createError({ statusCode: 400, message: 'League name must be 50 characters or less.', why: `Name is ${name.length} characters`, fix: 'Shorten the league name' })
+    throw createError({ statusCode: 400, message: 'League name must be 50 characters or less.' })
   }
 
   log.set({ league: { name } })
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     .limit(1)
 
   if (existingByName.length > 0) {
-    throw createError({ statusCode: 409, message: `A league named "${name}" already exists.`, why: 'League name must be unique', fix: 'Choose a different name for your league' })
+    throw createError({ statusCode: 409, message: `A league named "${name}" already exists.` })
   }
 
   let slug = slugify(name)
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
 
     if (!league) {
       log.error(new Error('League insert returned empty result'))
-      throw createError({ statusCode: 500, message: 'Failed to create the league.', why: 'Database insert returned no rows', fix: 'Try again or contact support' })
+      throw createError({ statusCode: 500, message: 'Failed to create the league.' })
     }
 
     await db.insert(schema.leagueMember).values({
@@ -77,12 +77,12 @@ export default defineEventHandler(async (event) => {
     log.set({ db: { code: dbCode, detail } })
 
     if (dbCode === '23503') {
-      throw createError({ statusCode: 401, message: 'Your session has expired.', why: `User ID ${user.id} does not exist in the database`, fix: 'Sign out and sign in again to refresh your session' })
+      throw createError({ statusCode: 401, message: 'Your session has expired.' })
     }
     if (dbCode === '23505') {
-      throw createError({ statusCode: 409, message: 'A league with this name already exists.', why: 'Unique constraint violation on league table', fix: 'Choose a different name for your league' })
+      throw createError({ statusCode: 409, message: 'A league with this name already exists.' })
     }
 
-    throw createError({ statusCode: 500, message: 'Failed to create the league.', why: `Database error: ${detail}`, fix: 'Try again or contact support' })
+    throw createError({ statusCode: 500, message: 'Failed to create the league.' })
   }
 })

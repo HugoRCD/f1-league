@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const allDrivers = await db.select().from(schema.driver).where(eq(schema.driver.active, true))
   if (allDrivers.length < 10) {
-    throw createError({ statusCode: 400, message: 'Need at least 10 active drivers', why: `Only ${allDrivers.length} active drivers found`, fix: 'Seed the season first' })
+    throw createError({ statusCode: 400, message: 'Need at least 10 active drivers' })
   }
 
   const driverIds = allDrivers.map(d => d.id)

@@ -16,6 +16,6 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  const updatedUser = updated?.user ?? updated
+  const updatedUser = (updated as any)?.user ?? updated
   return { id: user.id, name: updatedUser?.name ?? user.name, image: updatedUser?.image ?? user.image }
 })

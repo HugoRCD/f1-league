@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const raceResults = await $fetch<any[]>(`/api/f1/race/${body.round}`, { baseURL: getRequestURL(event).origin })
   if (!raceResults?.length) {
-    throw createError({ statusCode: 404, message: 'No race results available from F1 API for this round', why: `Round ${body.round} returned no results from the F1 API`, fix: 'Check that the round number is correct and the race has been completed' })
+    throw createError({ statusCode: 404, message: 'No race results available from F1 API for this round' })
   }
 
   const allDrivers = await db.select().from(schema.driver).where(eq(schema.driver.active, true))

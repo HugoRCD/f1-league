@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
       .set({ positions: body.positions })
       .where(eq(schema.raceResult.id, existing.id))
       .returning()
-    log.set({ result: { action: 'updated', id: updated.id } })
+    log.set({ result: { action: 'updated', id: updated!.id } })
     return updated
   }
 
@@ -53,6 +53,6 @@ export default defineEventHandler(async (event) => {
       positions: body.positions,
     })
     .returning()
-  log.set({ result: { action: 'created', id: created.id } })
+  log.set({ result: { action: 'created', id: created!.id } })
   return created
 })

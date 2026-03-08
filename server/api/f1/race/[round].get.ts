@@ -1,12 +1,12 @@
 const JOLPICA_API = 'https://api.jolpi.ca/ergast/f1'
 const SEASON = new Date().getFullYear()
 
-export default defineCachedEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event): Promise<any[]> => {
   const round = getRouterParam(event, 'round')!
 
   try {
-    const data = await $fetch<any>(`${JOLPICA_API}/${SEASON}/${round}/results/`)
-    const races = data.MRData?.RaceTable?.Races ?? []
+    const data: any = await $fetch(`${JOLPICA_API}/${SEASON}/${round}/results/`)
+    const races: any[] = data.MRData?.RaceTable?.Races ?? []
     if (!races.length) return []
 
     const [raceData] = races

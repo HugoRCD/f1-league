@@ -1,9 +1,9 @@
 const JOLPICA_API = 'https://api.jolpi.ca/ergast/f1'
 
-export default defineCachedEventHandler(async () => {
+export default defineCachedEventHandler(async (): Promise<any[]> => {
   try {
-    const data = await $fetch<any>(`${JOLPICA_API}/current/driverStandings/`)
-    const lists = data.MRData?.StandingsTable?.StandingsLists ?? []
+    const data: any = await $fetch(`${JOLPICA_API}/current/driverStandings/`)
+    const lists: any[] = data.MRData?.StandingsTable?.StandingsLists ?? []
     if (!lists.length) return []
 
     return (lists[0].DriverStandings ?? []).map((entry: any) => ({

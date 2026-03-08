@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<LeagueImport>(event)
 
   if (!body.league?.name?.trim()) {
-    throw createError({ statusCode: 400, message: 'League name is required', why: 'Missing league.name in import data', fix: 'Check the import file format' })
+    throw createError({ statusCode: 400, message: 'League name is required' })
   }
 
   const currentDrivers = await db.select().from(schema.driver).where(eq(schema.driver.active, true))
@@ -33,6 +33,16 @@ export default defineEventHandler(async (event) => {
     const byName = currentDrivers.find(d => normalizeDriverName(d.lastName) === normalizeDriverName(driver.lastName))
     if (byName) return byName.id
     return null
+  }
+
+  const [existingUser] = await db
+    .select({ id: schema.user.id })
+    .from(schema.user)
+    .where(eq(schema.user.id, user.id))
+    .limit(1)
+
+  if (!existingUser) {
+    await db.execute(sql`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") VALUES (${user.id}, ${user.name ?? 'Admin'}, ${user.email}, true, NOW(), NOW())`)
   }
 
   const [leagueRecord] = await db
