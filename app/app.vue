@@ -9,6 +9,7 @@ import { Analytics } from '@vercel/analytics/nuxt'
       <main>
         <NuxtPage />
       </main>
+      <AppFooter />
     </div>
     <Analytics />
   </UApp>
