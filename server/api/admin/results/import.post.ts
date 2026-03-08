@@ -1,10 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-function normalize(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036F]/g, '').replace(/[^a-z]/g, '')
-}
-
 export default defineEventHandler(async (event) => {
   const log = useLogger(event)
   await requireUserSession(event, { user: { role: 'admin' } })
@@ -24,8 +20,8 @@ export default defineEventHandler(async (event) => {
   const mapped: { apiName: string, driverId: string | null, position: number }[] = []
 
   for (const entry of top10) {
-    const apiSurname = normalize(entry.driverName.split(' ').pop() ?? '')
-    const match = allDrivers.find(d => normalize(d.lastName) === apiSurname)
+    const apiSurname = normalizeDriverName(entry.driverName.split(' ').pop() ?? '')
+    const match = allDrivers.find(d => normalizeDriverName(d.lastName) === apiSurname)
     mapped.push({
       apiName: entry.driverName,
       driverId: match?.id ?? null,

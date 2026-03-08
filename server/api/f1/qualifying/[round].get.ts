@@ -1,22 +1,23 @@
-const F1_API = 'https://f1api.dev/api'
+const JOLPICA_API = 'https://api.jolpi.ca/ergast/f1'
 const SEASON = new Date().getFullYear()
 
 export default defineCachedEventHandler(async (event) => {
   const round = getRouterParam(event, 'round')!
 
   try {
-    const data = await $fetch<any>(`${F1_API}/${SEASON}/${round}/qualy`)
-    const results = data.races?.qualyResults ?? data.qualyResults ?? []
+    const data = await $fetch<any>(`${JOLPICA_API}/${SEASON}/${round}/qualifying/`)
+    const races = data.MRData?.RaceTable?.Races ?? []
+    if (!races.length) return []
 
-    return results.map((entry: any) => ({
-      position: entry.gridPosition ?? entry.position,
-      driverName: `${entry.driver?.name ?? ''} ${entry.driver?.surname ?? ''}`.trim(),
-      driverCode: entry.driver?.shortName ?? '',
-      teamName: entry.team?.teamName ?? '',
-      teamId: entry.teamId ?? '',
-      q1: entry.q1 ?? null,
-      q2: entry.q2 ?? null,
-      q3: entry.q3 ?? null,
+    return (races[0].QualifyingResults ?? []).map((entry: any) => ({
+      position: Number(entry.position),
+      driverName: `${entry.Driver?.givenName ?? ''} ${entry.Driver?.familyName ?? ''}`.trim(),
+      driverCode: entry.Driver?.code ?? '',
+      teamName: entry.Constructor?.name ?? '',
+      teamId: entry.Constructor?.constructorId ?? '',
+      q1: entry.Q1 ?? null,
+      q2: entry.Q2 ?? null,
+      q3: entry.Q3 ?? null,
     }))
   }
   catch {

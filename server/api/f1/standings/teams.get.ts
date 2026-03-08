@@ -1,13 +1,20 @@
-const F1_API = 'https://f1api.dev/api'
+const JOLPICA_API = 'https://api.jolpi.ca/ergast/f1'
 
 export default defineCachedEventHandler(async () => {
-  const data = await $fetch<any>(`${F1_API}/current/teams-championship`)
+  try {
+    const data = await $fetch<any>(`${JOLPICA_API}/current/constructorStandings/`)
+    const lists = data.MRData?.StandingsTable?.StandingsLists ?? []
+    if (!lists.length) return []
 
-  return (data.teams_championship ?? []).map((entry: any) => ({
-    position: entry.position,
-    points: entry.points,
-    wins: entry.wins,
-    teamName: entry.team.teamName,
-    teamId: entry.teamId,
-  }))
+    return (lists[0].ConstructorStandings ?? []).map((entry: any) => ({
+      position: Number(entry.position),
+      points: Number(entry.points),
+      wins: Number(entry.wins),
+      teamName: entry.Constructor.name,
+      teamId: entry.Constructor.constructorId,
+    }))
+  }
+  catch {
+    return []
+  }
 }, { maxAge: 300, name: 'f1-standings-teams' })

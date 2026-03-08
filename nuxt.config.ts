@@ -38,6 +38,7 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
+      '0 * * * *': ['import-results'],
       '0 8 * * *': ['send-reminders'],
       '0 9 * * *': ['pitwall-predict'],
     },

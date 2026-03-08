@@ -128,6 +128,31 @@ async function submitResult() {
 }
 
 
+const autoImporting = ref(false)
+const autoImportResult = ref<{ imported: number, skipped: number, errors?: string[] } | null>(null)
+
+async function autoImportResults() {
+  autoImporting.value = true
+  autoImportResult.value = null
+  try {
+    const result = await $fetch<{ imported: number, skipped: number, errors?: string[] }>('/api/admin/results/auto-import', { method: 'POST' })
+    autoImportResult.value = result
+    if (result.imported > 0) {
+      toast.add({ title: `${result.imported} result(s) imported`, color: 'success', icon: 'i-lucide-check' })
+      await refreshAll()
+    } else {
+      toast.add({ title: 'No new results to import', description: 'All completed races already have results, or the F1 API has no data yet', color: 'neutral', icon: 'i-lucide-info' })
+    }
+    if (result.errors?.length) {
+      toast.add({ title: `${result.errors.length} error(s)`, description: result.errors.join(', '), color: 'warning', icon: 'i-lucide-alert-triangle' })
+    }
+  } catch (e: any) {
+    toast.add({ title: 'Auto-import failed', description: e?.data?.message, color: 'error' })
+  } finally {
+    autoImporting.value = false
+  }
+}
+
 const importing = ref(false)
 const selectedRound = computed(() => {
   if (!selectedRaceId.value || !races.value) return null
@@ -530,6 +555,49 @@ const tabs = [
 
         <template #results>
           <div class="py-6 flex flex-col gap-6 max-w-xl">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Auto-import
+              </h3>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <UIcon name="i-lucide-cloud-download" class="size-4 text-f1-600 shrink-0" />
+                    <div class="min-w-0">
+                      <p class="font-bold text-sm">
+                        Import all missing results
+                      </p>
+                      <p class="text-xs text-zinc-500">
+                        Fetches results from the F1 API for all completed races that don't have results yet. Also runs automatically every hour.
+                      </p>
+                    </div>
+                  </div>
+                  <UButton
+                    label="Import"
+                    icon="i-lucide-download"
+                    :loading="autoImporting"
+                    size="sm"
+                    class="shrink-0"
+                    @click="autoImportResults"
+                  />
+                </div>
+                <div v-if="autoImportResult" class="mt-3 ml-7 flex flex-wrap gap-3 text-xs">
+                  <span class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-green-500" />
+                    {{ autoImportResult.imported }} imported
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-zinc-500" />
+                    {{ autoImportResult.skipped }} skipped
+                  </span>
+                  <span v-if="autoImportResult.errors?.length" class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-red-500" />
+                    {{ autoImportResult.errors.length }} error(s)
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <h2 class="text-lg font-black uppercase tracking-tight mb-4">
                 Enter Race Results
