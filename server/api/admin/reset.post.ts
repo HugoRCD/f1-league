@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(schema.user).where(inArray(schema.user.id, fakeUserIds))
     }
 
+    await db.delete(schema.league).where(eq(schema.league.slug, 'simulation'))
     await db.delete(schema.raceResult)
 
     log.set({ reset: { deletedUsers: fakeUserIds.length, clearedResults: true } })

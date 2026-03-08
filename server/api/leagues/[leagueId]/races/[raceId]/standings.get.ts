@@ -1,15 +1,29 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const leagueId = getRouterParam(event, 'leagueId')!
   const raceId = getRouterParam(event, 'raceId')!
+  await requireLeagueMember(event, leagueId)
 
-  const [result] = await db.select().from(schema.raceResult).where(eq(schema.raceResult.raceId, raceId)).limit(1)
+  const [result] = await db
+    .select()
+    .from(schema.raceResult)
+    .where(eq(schema.raceResult.raceId, raceId))
+    .limit(1)
+
   if (!result) return { standings: null }
 
+  const memberIds = await db
+    .select({ userId: schema.leagueMember.userId })
+    .from(schema.leagueMember)
+    .where(eq(schema.leagueMember.leagueId, leagueId))
+
+  const userIds = memberIds.map(m => m.userId)
+  if (userIds.length === 0) return { standings: [] }
+
   const [config, predictions] = await Promise.all([
-    getScoringConfig(),
+    getLeagueScoringConfig(leagueId),
     db.select({
       userId: schema.prediction.userId,
       userName: schema.user.name,
@@ -18,7 +32,11 @@ export default defineEventHandler(async (event) => {
     })
       .from(schema.prediction)
       .innerJoin(schema.user, eq(schema.prediction.userId, schema.user.id))
-      .where(eq(schema.prediction.raceId, raceId)),
+      .where(and(
+        eq(schema.prediction.raceId, raceId),
+        eq(schema.prediction.leagueId, leagueId),
+        inArray(schema.prediction.userId, userIds),
+      )),
   ])
 
   const standings = predictions.map((p) => {

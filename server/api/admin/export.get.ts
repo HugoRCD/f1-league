@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
   const season = Number(getQuery(event).season) || new Date().getFullYear()
 
-  const [users, races, predictions, results, drivers, teams] = await Promise.all([
+  const [users, races, predictions, results, drivers, teams, leagues] = await Promise.all([
     db.select({
       id: schema.user.id,
       name: schema.user.name,
@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     db.select().from(schema.raceResult),
     db.select().from(schema.driver),
     db.select().from(schema.team),
+    db.select().from(schema.league),
   ])
 
   const raceIds = new Set(races.map(r => r.id))
@@ -46,6 +47,7 @@ export default defineEventHandler(async (event) => {
       .map(p => ({
         userId: p.userId,
         raceId: p.raceId,
+        leagueId: p.leagueId,
         raceName: raceMap.get(p.raceId) ?? null,
         positions: (p.positions as string[]).map(driverId => ({
           driverId,
@@ -53,6 +55,12 @@ export default defineEventHandler(async (event) => {
         })),
         createdAt: p.createdAt.toISOString(),
       })),
+    leagues: leagues.map(l => ({
+      id: l.id,
+      name: l.name,
+      slug: l.slug,
+      season: l.season,
+    })),
     results: results
       .filter(r => raceIds.has(r.raceId))
       .map(r => ({

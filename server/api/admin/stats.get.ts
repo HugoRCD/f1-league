@@ -6,13 +6,14 @@ export default defineEventHandler(async (event) => {
 
   const countQuery = (table: any) => db.select({ count: sql<number>`count(*)::int` }).from(table).then(r => r[0].count)
 
-  const [teams, drivers, races, results, predictions] = await Promise.all([
+  const [teams, drivers, races, results, predictions, leagues] = await Promise.all([
     countQuery(schema.team),
     countQuery(schema.driver),
     countQuery(schema.race),
     countQuery(schema.raceResult),
     countQuery(schema.prediction),
+    countQuery(schema.league),
   ])
 
-  return { teams, drivers, races, results, predictions }
+  return { teams, drivers, races, results, predictions, leagues }
 })

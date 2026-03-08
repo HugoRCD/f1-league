@@ -77,21 +77,7 @@ export default defineEventHandler(async (event) => {
       continue
     }
 
-    const [existing] = await db.select().from(schema.prediction)
-      .where(and(eq(schema.prediction.userId, user.id), eq(schema.prediction.raceId, race.id)))
-      .limit(1)
-
-    if (existing) {
-      predictionsSkipped++
-      continue
-    }
-
-    await db.insert(schema.prediction).values({
-      userId: user.id,
-      raceId: race.id,
-      positions: positions as string[],
-    })
-    predictionsImported++
+    predictionsSkipped++
   }
 
   for (const res of data.results) {

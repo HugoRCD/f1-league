@@ -43,7 +43,36 @@ export default defineEventHandler(async (event) => {
   }
 
   if (userIds.length === 0) {
-    throw createError({ statusCode: 500, message: 'Failed to create any test users', why: 'All user creation attempts failed during simulation setup' })
+    throw createError({ statusCode: 500, message: 'Failed to create any test users' })
+  }
+
+  const [existingSimLeague] = await db
+    .select()
+    .from(schema.league)
+    .where(eq(schema.league.slug, 'simulation'))
+    .limit(1)
+
+  let simLeague = existingSimLeague
+
+  if (!simLeague) {
+    const [created] = await db
+      .insert(schema.league)
+      .values({
+        name: 'Simulation League',
+        slug: 'simulation',
+        description: 'Auto-generated league for simulation testing',
+        inviteCode: generateInviteCode(),
+        createdBy: userIds[0]!,
+      })
+      .returning()
+    simLeague = created!
+  }
+
+  for (const userId of userIds) {
+    await db
+      .insert(schema.leagueMember)
+      .values({ leagueId: simLeague.id, userId, role: 'member' })
+      .onConflictDoNothing()
   }
 
   const races = await db
@@ -52,11 +81,13 @@ export default defineEventHandler(async (event) => {
     .orderBy(schema.race.startAt)
     .limit(racesToSimulate)
 
-  function shuffle<T>(arr: T[]): T[] {
+  function shuffle(arr: string[]): string[] {
     const a = [...arr]
     for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]]
+      const j = Math.floor(Math.random() * (i + 1))
+      const temp = a[i]!
+      a[i] = a[j]!
+      a[j] = temp
     }
     return a
   }
@@ -83,9 +114,9 @@ export default defineEventHandler(async (event) => {
       const prediction = randomTop10()
       await db
         .insert(schema.prediction)
-        .values({ userId, raceId: race.id, positions: prediction })
+        .values({ userId, raceId: race.id, leagueId: simLeague.id, positions: prediction })
         .onConflictDoUpdate({
-          target: [schema.prediction.userId, schema.prediction.raceId],
+          target: [schema.prediction.userId, schema.prediction.raceId, schema.prediction.leagueId],
           set: { positions: prediction },
         })
       predictionsCreated++
@@ -96,6 +127,8 @@ export default defineEventHandler(async (event) => {
     users: userIds.length,
     races: resultsCreated,
     predictions: predictionsCreated,
+    leagueId: simLeague.id,
+    leagueSlug: simLeague.slug,
   }
   log.set({ simulate: { result } })
   return result
