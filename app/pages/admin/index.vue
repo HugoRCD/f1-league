@@ -351,6 +351,56 @@ async function updateReminderDays(days: number[]) {
 
 const { user: currentUser } = useUserSession()
 
+const exporting = ref(false)
+async function exportData() {
+  exporting.value = true
+  try {
+    const data = await $fetch('/api/admin/export', { responseType: 'json' })
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `f1-league-${(data as any).season}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.add({ title: 'Data exported', color: 'success', icon: 'i-lucide-check' })
+  } catch (e: any) {
+    toast.add({ title: 'Export failed', description: e?.data?.message, color: 'error' })
+  } finally {
+    exporting.value = false
+  }
+}
+
+const dataImporting = ref(false)
+const importFileRef = ref<HTMLInputElement>()
+
+function triggerImportFile() {
+  importFileRef.value?.click()
+}
+
+async function handleImportFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  dataImporting.value = true
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    const result = await $fetch<{ predictionsImported: number, predictionsSkipped: number, resultsImported: number, resultsSkipped: number }>('/api/admin/import', { method: 'POST', body: data })
+    toast.add({
+      title: 'Data imported',
+      description: `${result.predictionsImported} predictions, ${result.resultsImported} results imported`,
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
+    await refreshAll()
+  } catch (e: any) {
+    toast.add({ title: 'Import failed', description: e?.data?.message ?? 'Invalid file', color: 'error' })
+  } finally {
+    dataImporting.value = false
+    if (importFileRef.value) importFileRef.value.value = ''
+  }
+}
+
 const tabs = [
   { label: 'Seed & Test', value: 'seed', slot: 'seed', icon: 'i-lucide-database' },
   { label: 'Users', value: 'users', slot: 'users', icon: 'i-lucide-users' },
@@ -898,6 +948,39 @@ const tabs = [
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-zinc-800/30">
+              <p class="text-[11px] text-zinc-600 uppercase tracking-[0.15em] font-semibold mb-3">
+                Data
+              </p>
+              <div class="flex gap-2">
+                <UButton
+                  label="Export"
+                  icon="i-lucide-hard-drive-download"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :loading="exporting"
+                  @click="exportData"
+                />
+                <UButton
+                  label="Import"
+                  icon="i-lucide-hard-drive-upload"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :loading="dataImporting"
+                  @click="triggerImportFile"
+                />
+                <input
+                  ref="importFileRef"
+                  type="file"
+                  accept=".json"
+                  class="hidden"
+                  @change="handleImportFile"
+                >
               </div>
             </div>
           </div>
