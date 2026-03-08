@@ -1,5 +1,5 @@
-import type { ScoringConfig } from '../../utils/scoring'
 import { kv } from 'hub:kv'
+import type { ScoringConfig } from '../../utils/scoring'
 
 export default defineEventHandler(async (event) => {
   const log = useLogger(event)
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     offBy3Plus: body.offBy3Plus ?? current.offBy3Plus,
     notInTop10: body.notInTop10 ?? current.notInTop10,
     lockMinutesBefore: body.lockMinutesBefore ?? current.lockMinutesBefore,
+    openDaysBefore: body.openDaysBefore ?? current.openDaysBefore,
   }
 
   await kv.set('scoring:config', updated)

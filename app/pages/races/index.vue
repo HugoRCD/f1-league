@@ -45,8 +45,12 @@ function raceLink(raceId: string): string {
   <UContainer class="py-8">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">2026 Season</p>
-        <h1 class="text-2xl font-black uppercase tracking-tight mt-1">Schedule</h1>
+        <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">
+          2026 Season
+        </p>
+        <h1 class="text-2xl font-black uppercase tracking-tight mt-1">
+          Schedule
+        </h1>
       </div>
       <div v-if="races" class="text-sm text-zinc-500 tabular-nums">
         {{ races.filter((r: any) => r.hasResult).length }}/{{ races.length }} completed
@@ -64,7 +68,9 @@ function raceLink(raceId: string): string {
 
     <div v-else class="flex flex-col gap-8">
       <div v-for="group in racesByMonth" :key="group.month">
-        <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 mb-3 pl-1">{{ group.month }}</h2>
+        <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 mb-3 pl-1">
+          {{ group.month }}
+        </h2>
         <div class="flex flex-col gap-2">
           <NuxtLink
             v-for="race in group.races"
@@ -87,7 +93,9 @@ function raceLink(raceId: string): string {
               {{ races!.indexOf(race) + 1 }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-bold truncate" :class="race.id === nextRaceId ? 'text-white' : ''">{{ race.name }}</p>
+              <p class="font-bold truncate" :class="race.id === nextRaceId ? 'text-white' : ''">
+                {{ race.name }}
+              </p>
               <p class="text-sm text-zinc-500 flex items-center gap-1.5 mt-0.5">
                 <UIcon name="i-lucide-map-pin" class="size-3" />
                 {{ race.location }}

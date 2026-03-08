@@ -13,8 +13,7 @@ export default defineCachedEventHandler(async () => {
       teamName: entry.Constructor.name,
       teamId: entry.Constructor.constructorId,
     }))
-  }
-  catch {
+  } catch {
     return []
   }
 }, { maxAge: 300, name: 'f1-standings-teams' })

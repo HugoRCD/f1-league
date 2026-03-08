@@ -34,8 +34,12 @@ watch(leagueId, (id) => {
     </NuxtLink>
 
     <div class="mb-8">
-      <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">{{ league?.name }}</p>
-      <h1 class="text-2xl font-black uppercase tracking-tight mt-1">Championship Standings</h1>
+      <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">
+        {{ league?.name }}
+      </p>
+      <h1 class="text-2xl font-black uppercase tracking-tight mt-1">
+        Championship Standings
+      </h1>
     </div>
 
     <div v-if="status === 'pending'" class="flex flex-col gap-4">
@@ -47,8 +51,12 @@ watch(leagueId, (id) => {
 
     <div v-else-if="!(leaderboard as any[])?.length" class="text-center py-20">
       <UIcon name="i-lucide-trophy" class="size-16 mx-auto mb-4 text-zinc-800" />
-      <p class="text-xl font-bold mb-1">No results yet</p>
-      <p class="text-zinc-500">The championship standings will appear after the first race result is entered.</p>
+      <p class="text-xl font-bold mb-1">
+        No results yet
+      </p>
+      <p class="text-zinc-500">
+        The championship standings will appear after the first race result is entered.
+      </p>
     </div>
 
     <template v-else>
@@ -59,12 +67,20 @@ watch(leagueId, (id) => {
               <UserAvatar :image="(leaderboard as any[])[1].userImage" :name="(leaderboard as any[])[1].userName" size="md" />
             </div>
           </div>
-          <p class="font-bold text-sm truncate">{{ (leaderboard as any[])[1].userName }}</p>
+          <p class="font-bold text-sm truncate">
+            {{ (leaderboard as any[])[1].userName }}
+          </p>
           <div class="mt-3 rounded-t-xl bg-zinc-400/10 border border-zinc-400/20 border-b-0 pt-4 pb-6 px-3">
-            <p class="text-3xl font-black tabular-nums text-zinc-300">{{ (leaderboard as any[])[1].totalPoints }}</p>
-            <p class="text-[10px] text-zinc-500 mt-1">{{ (leaderboard as any[])[1].raceWins }}W · {{ (leaderboard as any[])[1].totalExactHits }}E</p>
+            <p class="text-3xl font-black tabular-nums text-zinc-300">
+              {{ (leaderboard as any[])[1].totalPoints }}
+            </p>
+            <p class="text-[10px] text-zinc-500 mt-1">
+              {{ (leaderboard as any[])[1].raceWins }}W · {{ (leaderboard as any[])[1].totalExactHits }}E
+            </p>
           </div>
-          <div class="bg-zinc-400/20 py-2 text-sm font-black text-zinc-300">2nd</div>
+          <div class="bg-zinc-400/20 py-2 text-sm font-black text-zinc-300">
+            2nd
+          </div>
         </div>
 
         <div class="w-44 text-center -mb-2">
@@ -74,12 +90,20 @@ watch(leagueId, (id) => {
               <UserAvatar :image="(leaderboard as any[])[0].userImage" :name="(leaderboard as any[])[0].userName" size="lg" />
             </div>
           </div>
-          <p class="font-bold truncate">{{ (leaderboard as any[])[0].userName }}</p>
+          <p class="font-bold truncate">
+            {{ (leaderboard as any[])[0].userName }}
+          </p>
           <div class="mt-3 rounded-t-xl bg-yellow-500/10 border border-yellow-500/20 border-b-0 pt-6 pb-8 px-3">
-            <p class="text-4xl font-black tabular-nums text-yellow-400">{{ (leaderboard as any[])[0].totalPoints }}</p>
-            <p class="text-[10px] text-zinc-500 mt-1">{{ (leaderboard as any[])[0].raceWins }}W · {{ (leaderboard as any[])[0].totalExactHits }}E</p>
+            <p class="text-4xl font-black tabular-nums text-yellow-400">
+              {{ (leaderboard as any[])[0].totalPoints }}
+            </p>
+            <p class="text-[10px] text-zinc-500 mt-1">
+              {{ (leaderboard as any[])[0].raceWins }}W · {{ (leaderboard as any[])[0].totalExactHits }}E
+            </p>
           </div>
-          <div class="bg-yellow-500/20 py-2 text-sm font-black text-yellow-400">1st</div>
+          <div class="bg-yellow-500/20 py-2 text-sm font-black text-yellow-400">
+            1st
+          </div>
         </div>
 
         <div class="w-36 text-center">
@@ -88,12 +112,20 @@ watch(leagueId, (id) => {
               <UserAvatar :image="(leaderboard as any[])[2].userImage" :name="(leaderboard as any[])[2].userName" size="md" />
             </div>
           </div>
-          <p class="font-bold text-sm truncate">{{ (leaderboard as any[])[2].userName }}</p>
+          <p class="font-bold text-sm truncate">
+            {{ (leaderboard as any[])[2].userName }}
+          </p>
           <div class="mt-3 rounded-t-xl bg-amber-700/10 border border-amber-700/20 border-b-0 pt-3 pb-4 px-3">
-            <p class="text-2xl font-black tabular-nums text-amber-500">{{ (leaderboard as any[])[2].totalPoints }}</p>
-            <p class="text-[10px] text-zinc-500 mt-1">{{ (leaderboard as any[])[2].raceWins }}W · {{ (leaderboard as any[])[2].totalExactHits }}E</p>
+            <p class="text-2xl font-black tabular-nums text-amber-500">
+              {{ (leaderboard as any[])[2].totalPoints }}
+            </p>
+            <p class="text-[10px] text-zinc-500 mt-1">
+              {{ (leaderboard as any[])[2].raceWins }}W · {{ (leaderboard as any[])[2].totalExactHits }}E
+            </p>
           </div>
-          <div class="bg-amber-700/20 py-2 text-sm font-black text-amber-500">3rd</div>
+          <div class="bg-amber-700/20 py-2 text-sm font-black text-amber-500">
+            3rd
+          </div>
         </div>
       </div>
 
@@ -101,11 +133,21 @@ watch(leagueId, (id) => {
         <table class="w-full">
           <thead>
             <tr class="border-b border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-              <th class="text-left px-4 py-2.5 w-12">Pos</th>
-              <th class="text-left py-2.5">Player</th>
-              <th class="text-right px-3 py-2.5 w-14 hidden sm:table-cell">Wins</th>
-              <th class="text-right px-3 py-2.5 w-14 hidden sm:table-cell">Exact</th>
-              <th class="text-right px-4 py-2.5 w-20">Points</th>
+              <th class="text-left px-4 py-2.5 w-12">
+                Pos
+              </th>
+              <th class="text-left py-2.5">
+                Player
+              </th>
+              <th class="text-right px-3 py-2.5 w-14 hidden sm:table-cell">
+                Wins
+              </th>
+              <th class="text-right px-3 py-2.5 w-14 hidden sm:table-cell">
+                Exact
+              </th>
+              <th class="text-right px-4 py-2.5 w-20">
+                Points
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -127,8 +169,12 @@ watch(leagueId, (id) => {
                     <span v-if="player.userId === user?.id" class="text-[10px] text-[#E10600] font-bold uppercase">you</span>
                   </div>
                 </td>
-                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.raceWins }}</td>
-                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.totalExactHits }}</td>
+                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">
+                  {{ player.raceWins }}
+                </td>
+                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">
+                  {{ player.totalExactHits }}
+                </td>
                 <td class="text-right px-4 py-3">
                   <div class="flex items-center justify-end gap-2">
                     <span class="font-black text-lg tabular-nums">{{ player.totalPoints }}</span>

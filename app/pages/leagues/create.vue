@@ -28,8 +28,7 @@ async function onSubmit() {
     await refreshLeagues()
     toast.add({ title: 'League created!', color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${league.slug}`)
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const message = e.data?.message || 'Something went wrong. Please try again.'
     error.value = message
     if (e.statusCode === 401 || e.data?.statusCode === 401) {
@@ -37,8 +36,7 @@ async function onSubmit() {
       navigateTo('/login')
       return
     }
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -55,7 +53,7 @@ async function onSubmit() {
       Create a League
     </h1>
 
-    <UForm :schema="schema" :state="state" class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+    <UForm :schema :state class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
       <UFormField name="name" label="League name" required>
         <UInput v-model="state.name" placeholder="e.g. The Pit Lane Gang" size="lg" class="w-full" autofocus />
       </UFormField>
@@ -77,7 +75,7 @@ async function onSubmit() {
         type="submit"
         label="Create League"
         size="lg"
-        :loading="loading"
+        :loading
         class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
         block
       />

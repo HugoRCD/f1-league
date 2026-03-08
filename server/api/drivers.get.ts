@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(() => {
   return db
     .select({
       id: schema.driver.id,

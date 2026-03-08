@@ -77,8 +77,7 @@ export default defineTask({
               availableDriverIds: allDrivers.map(d => ({ id: d.id, lastName: d.lastName })),
             })
             racePositions = result.prediction
-          }
-          catch (e) {
+          } catch (e) {
             errors.push(race.name)
             log.error(e instanceof Error ? e : new Error(`Pitwall failed to predict ${race.name}`))
             break

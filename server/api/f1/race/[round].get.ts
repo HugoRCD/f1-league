@@ -9,7 +9,7 @@ export default defineCachedEventHandler(async (event) => {
     const races = data.MRData?.RaceTable?.Races ?? []
     if (!races.length) return []
 
-    const raceData = races[0]
+    const [raceData] = races
 
     return (raceData.Results ?? []).map((entry: any) => ({
       position: Number(entry.position),
@@ -29,8 +29,7 @@ export default defineCachedEventHandler(async (event) => {
         time: entry.FastestLap.Time?.time ?? null,
       } : null,
     }))
-  }
-  catch {
+  } catch {
     return []
   }
 }, { maxAge: 300, name: 'f1-race-result' })

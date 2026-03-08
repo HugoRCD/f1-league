@@ -1,5 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
+import type { H3Event } from 'h3'
+
 export function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   let code = ''
@@ -74,5 +76,3 @@ export async function getLeagueScoringConfig(leagueId: string): Promise<import('
 
   return getScoringConfig()
 }
-
-import type { H3Event } from 'h3'

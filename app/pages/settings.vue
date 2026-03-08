@@ -31,11 +31,9 @@ async function saveProfile() {
     profileState.name = user.value?.name || profileState.name
     profileState.image = user.value?.image || profileState.image
     toast.add({ title: 'Profile updated', color: 'success', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     savingProfile.value = false
   }
 }
@@ -47,20 +45,25 @@ async function setNotifications(enabled: boolean) {
     await $fetch('/api/user/notifications', { method: 'POST', body: { enabled } })
     if (notifPref.value) notifPref.value.notificationsEnabled = enabled
     toast.add({ title: enabled ? 'Notifications enabled' : 'Notifications disabled', color: 'success', icon: 'i-lucide-check' })
-  }
-  catch {}
+  } catch { /* silently fail */ }
 }
 </script>
 
 <template>
   <UContainer class="py-8 max-w-xl">
     <div class="mb-8">
-      <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">Account</p>
-      <h1 class="text-2xl font-black uppercase tracking-tight mt-1">Settings</h1>
+      <p class="text-sm text-zinc-500 uppercase tracking-[0.15em] font-semibold">
+        Account
+      </p>
+      <h1 class="text-2xl font-black uppercase tracking-tight mt-1">
+        Settings
+      </h1>
     </div>
 
     <div class="mb-8">
-      <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">Profile</h2>
+      <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">
+        Profile
+      </h2>
       <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
         <div class="flex items-center gap-4 mb-5">
           <img
@@ -73,8 +76,12 @@ async function setNotifications(enabled: boolean) {
             <UIcon name="i-lucide-user" class="size-7 text-zinc-500" />
           </div>
           <div>
-            <p class="font-bold">{{ user?.name }}</p>
-            <p class="text-sm text-zinc-500">{{ user?.email }}</p>
+            <p class="font-bold">
+              {{ user?.name }}
+            </p>
+            <p class="text-sm text-zinc-500">
+              {{ user?.email }}
+            </p>
           </div>
         </div>
         <UForm :schema="profileSchema" :state="profileState" class="flex flex-col gap-3" @submit="saveProfile" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
@@ -84,20 +91,33 @@ async function setNotifications(enabled: boolean) {
           <UFormField name="image" label="Avatar URL" description="Paste a link to your profile picture (GitHub, Twitter, etc.)">
             <UInput v-model="profileState.image" placeholder="https://..." class="w-full" />
           </UFormField>
-          <UButton type="submit" label="Save profile" icon="i-lucide-check" :loading="savingProfile" size="sm" class="self-start mt-1" />
+          <UButton
+            type="submit"
+            label="Save profile"
+            icon="i-lucide-check"
+            :loading="savingProfile"
+            size="sm"
+            class="self-start mt-1"
+          />
         </UForm>
       </div>
     </div>
 
     <div>
-      <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">Notifications</h2>
+      <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">
+        Notifications
+      </h2>
       <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800/50">
           <div class="flex items-center gap-3">
             <UIcon name="i-lucide-mail" class="size-4 text-zinc-400" />
             <div>
-              <p class="text-sm font-semibold">Race reminders</p>
-              <p class="text-xs text-zinc-500">Get an email when predictions open for a race you haven't predicted yet</p>
+              <p class="text-sm font-semibold">
+                Race reminders
+              </p>
+              <p class="text-xs text-zinc-500">
+                Get an email when predictions open for a race you haven't predicted yet
+              </p>
             </div>
           </div>
           <USwitch
@@ -109,11 +129,17 @@ async function setNotifications(enabled: boolean) {
           <div class="flex items-center gap-3">
             <UIcon name="i-lucide-trophy" class="size-4 text-zinc-400" />
             <div>
-              <p class="text-sm font-semibold">Results notifications</p>
-              <p class="text-xs text-zinc-500">Get notified when race results are published and standings are updated</p>
+              <p class="text-sm font-semibold">
+                Results notifications
+              </p>
+              <p class="text-xs text-zinc-500">
+                Get notified when race results are published and standings are updated
+              </p>
             </div>
           </div>
-          <UBadge color="neutral" variant="outline" size="xs" class="shrink-0 whitespace-nowrap">Coming soon</UBadge>
+          <UBadge color="neutral" variant="outline" size="xs" class="shrink-0 whitespace-nowrap">
+            Coming soon
+          </UBadge>
         </div>
       </div>
     </div>

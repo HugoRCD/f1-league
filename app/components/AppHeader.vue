@@ -9,7 +9,7 @@ const { data: leagues } = useLeagues()
 const lastLeague = useLastLeague()
 
 const currentLeagueSlug = computed(() => {
-  const slug = route.params.slug
+  const { slug } = route.params
   return typeof slug === 'string' ? slug : undefined
 })
 
@@ -20,14 +20,8 @@ const currentLeague = computed(() => {
 
 const activeLeague = computed(() => currentLeague.value ?? lastLeague.value)
 
-const otherLeagues = computed(() => {
-  if (!leagues.value) return []
-  const activeSlug = activeLeague.value?.slug
-  return leagues.value.filter(l => l.slug !== activeSlug)
-})
-
 function leagueSwitchLink(targetSlug: string): string {
-  const path = route.path
+  const { path } = route
   if (currentLeagueSlug.value && path.includes(`/leagues/${currentLeagueSlug.value}`)) {
     return path.replace(`/leagues/${currentLeagueSlug.value}`, `/leagues/${targetSlug}`)
   }
@@ -131,8 +125,12 @@ const avatarUrl = computed(() => user.value?.image || null)
             <template #content>
               <div class="w-52 p-1">
                 <div class="px-3 py-2 mb-1">
-                  <p class="text-sm font-semibold">{{ user?.name }}</p>
-                  <p class="text-xs text-zinc-500 truncate">{{ user?.email }}</p>
+                  <p class="text-sm font-semibold">
+                    {{ user?.name }}
+                  </p>
+                  <p class="text-xs text-zinc-500 truncate">
+                    {{ user?.email }}
+                  </p>
                 </div>
                 <div class="h-px bg-zinc-800 my-1" />
                 <NuxtLink
@@ -162,11 +160,25 @@ const avatarUrl = computed(() => user.value?.image || null)
           </UPopover>
         </template>
         <template v-else>
-          <UButton to="/login" label="Sign In" variant="ghost" color="neutral" size="sm" class="font-semibold uppercase tracking-wider text-xs" />
+          <UButton
+            to="/login"
+            label="Sign In"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            class="font-semibold uppercase tracking-wider text-xs"
+          />
           <UButton to="/register" label="Subscribe" size="sm" class="font-semibold uppercase tracking-wider text-xs bg-[#E10600] hover:bg-[#c00500] border-0" />
         </template>
 
-        <UButton class="md:hidden" icon="i-lucide-menu" variant="ghost" color="neutral" size="sm" @click="mobileOpen = true" />
+        <UButton
+          class="md:hidden"
+          icon="i-lucide-menu"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="mobileOpen = true"
+        />
       </div>
     </UContainer>
 
@@ -178,7 +190,9 @@ const avatarUrl = computed(() => user.value?.image || null)
         </div>
 
         <div v-if="loggedIn && leagues?.length" class="mb-6">
-          <p class="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold mb-2 px-4">Your Leagues</p>
+          <p class="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold mb-2 px-4">
+            Your Leagues
+          </p>
           <NuxtLink
             v-for="l in leagues"
             :key="l.id"
@@ -193,7 +207,9 @@ const avatarUrl = computed(() => user.value?.image || null)
 
         <nav class="flex flex-col gap-1">
           <NuxtLink
-            v-for="item in navItems" :key="item.to" :to="item.to"
+            v-for="item in navItems"
+            :key="item.to"
+            :to="item.to"
             class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors uppercase tracking-wider"
             active-class="!text-white bg-zinc-800"
             @click="mobileOpen = false"
@@ -207,7 +223,7 @@ const avatarUrl = computed(() => user.value?.image || null)
             <UIcon name="i-lucide-settings" class="size-5" />
             Settings
           </NuxtLink>
-          <button class="flex items-center gap-3 px-4 py-3 text-sm text-zinc-400 hover:bg-zinc-800/50 rounded-lg transition-colors text-left" @click="handleSignOut; mobileOpen = false">
+          <button class="flex items-center gap-3 px-4 py-3 text-sm text-zinc-400 hover:bg-zinc-800/50 rounded-lg transition-colors text-left" @click="() => { handleSignOut(); mobileOpen = false }">
             <UIcon name="i-lucide-log-out" class="size-5" />
             Sign out
           </button>

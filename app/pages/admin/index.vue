@@ -31,7 +31,9 @@ const paginatedLeagues = computed(() => {
   const start = (leaguePage.value - 1) * ITEMS_PER_PAGE
   return filteredLeagues.value.slice(start, start + ITEMS_PER_PAGE)
 })
-watch(leagueSearch, () => { leaguePage.value = 1 })
+watch(leagueSearch, () => {
+  leaguePage.value = 1 
+})
 
 const userSearch = ref('')
 const userPage = ref(1)
@@ -48,7 +50,9 @@ const paginatedUsers = computed(() => {
   const start = (userPage.value - 1) * ITEMS_PER_PAGE
   return filteredUsers.value.slice(start, start + ITEMS_PER_PAGE)
 })
-watch(userSearch, () => { userPage.value = 1 })
+watch(userSearch, () => {
+  userPage.value = 1 
+})
 
 async function refreshAll() {
   clearNuxtData()
@@ -96,15 +100,12 @@ async function simulateChampionship() {
       icon: 'i-lucide-check',
     })
     await refreshAll()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Simulation failed', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     simulating.value = false
   }
 }
-
 
 
 async function togglePitwall(leagueId: string, enabled: boolean) {
@@ -112,8 +113,7 @@ async function togglePitwall(leagueId: string, enabled: boolean) {
     await $fetch('/api/admin/leagues', { method: 'POST', body: { leagueId, pitwallEnabled: enabled } })
     toast.add({ title: `Pitwall ${enabled ? 'enabled' : 'disabled'}`, color: 'success', icon: 'i-lucide-bot' })
     await refreshAdminLeagues()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
   }
 }
@@ -142,96 +142,6 @@ async function resetAllData() {
     toast.add({ title: 'Reset failed', description: e?.data?.message, color: 'error' })
   } finally {
     resetting.value = false
-  }
-}
-
-
-const selectedRaceId = ref('')
-const resultPositions = ref<(string | null)[]>(Array.from({ length: 10 }, () => null))
-const savingResult = ref(false)
-
-watch(selectedRaceId, async (raceId) => {
-  if (!raceId) return
-  resultPositions.value = Array.from({ length: 10 }, () => null)
-  try {
-    const race = await $fetch(`/api/races/${raceId}`)
-    if (race.result) resultPositions.value = [...(race.result as string[])]
-  } catch { /* race may not exist yet */ }
-})
-
-function availableDriversForResult(posIndex: number) {
-  const selected = new Set(resultPositions.value.filter((id, i) => id && i !== posIndex))
-  return activeDrivers.value.filter(d => !selected.has(d.id))
-}
-
-async function submitResult() {
-  if (!selectedRaceId.value || resultPositions.value.some(p => !p)) return
-  savingResult.value = true
-  try {
-    await $fetch('/api/admin/results', { method: 'POST', body: { raceId: selectedRaceId.value, positions: resultPositions.value } })
-    toast.add({ title: 'Result saved', color: 'success', icon: 'i-lucide-check' })
-    await refreshAll()
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
-  } finally {
-    savingResult.value = false
-  }
-}
-
-
-const autoImporting = ref(false)
-const autoImportResult = ref<{ imported: number, skipped: number, errors?: string[] } | null>(null)
-
-async function autoImportResults() {
-  autoImporting.value = true
-  autoImportResult.value = null
-  try {
-    const result = await $fetch<{ imported: number, skipped: number, errors?: string[] }>('/api/admin/results/auto-import', { method: 'POST' })
-    autoImportResult.value = result
-    if (result.imported > 0) {
-      toast.add({ title: `${result.imported} result(s) imported`, color: 'success', icon: 'i-lucide-check' })
-      await refreshAll()
-    } else {
-      toast.add({ title: 'No new results to import', description: 'All completed races already have results, or the F1 API has no data yet', color: 'neutral', icon: 'i-lucide-info' })
-    }
-    if (result.errors?.length) {
-      toast.add({ title: `${result.errors.length} error(s)`, description: result.errors.join(', '), color: 'warning', icon: 'i-lucide-alert-triangle' })
-    }
-  } catch (e: any) {
-    toast.add({ title: 'Auto-import failed', description: e?.data?.message, color: 'error' })
-  } finally {
-    autoImporting.value = false
-  }
-}
-
-const importing = ref(false)
-const selectedRound = computed(() => {
-  if (!selectedRaceId.value || !races.value) return null
-  const index = races.value.findIndex(r => r.id === selectedRaceId.value)
-  return index >= 0 ? index + 1 : null
-})
-
-async function importFromApi() {
-  if (!selectedRound.value) return
-  importing.value = true
-  try {
-    const result = await $fetch('/api/admin/results/import', {
-      method: 'POST',
-      body: { round: selectedRound.value },
-    })
-    if (result.unmatchedCount > 0) {
-      toast.add({ title: 'Partial import', description: `${result.unmatchedCount} driver(s) could not be matched`, color: 'warning' })
-    }
-    else {
-      toast.add({ title: 'Results imported', description: 'Review and save below', color: 'success', icon: 'i-lucide-check' })
-    }
-    resultPositions.value = result.positions as (string | null)[]
-  }
-  catch (e: any) {
-    toast.add({ title: 'Import failed', description: e?.data?.message || 'No results available yet', color: 'error' })
-  }
-  finally {
-    importing.value = false
   }
 }
 
@@ -464,15 +374,12 @@ async function autoImportResults() {
     if (result.imported > 0) {
       toast.add({ title: `${result.imported} result(s) imported`, color: 'success', icon: 'i-lucide-check' })
       await refreshAll()
-    }
-    else {
+    } else {
       toast.add({ title: 'No new results to import', description: 'All completed races already have results, or the F1 API has no data yet', color: 'neutral', icon: 'i-lucide-info' })
     }
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Auto-import failed', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     autoImporting.value = false
   }
 }
@@ -488,8 +395,7 @@ watch(selectedResultRaceId, async (raceId) => {
   try {
     const race = await $fetch<any>(`/api/races/${raceId}`)
     if (race.result) resultPositions.value = [...(race.result as string[])]
-  }
-  catch {}
+  } catch { /* race may not have results yet */ }
 })
 
 function availableDriversForResult(posIndex: number) {
@@ -504,11 +410,9 @@ async function submitResult() {
     await $fetch('/api/admin/results', { method: 'POST', body: { raceId: selectedResultRaceId.value, positions: resultPositions.value } })
     toast.add({ title: 'Result saved', color: 'success', icon: 'i-lucide-check' })
     await refreshAll()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     savingResult.value = false
   }
 }
@@ -526,16 +430,13 @@ async function importResultFromApi() {
     const result = await $fetch<any>('/api/admin/results/import', { method: 'POST', body: { round: selectedResultRound.value } })
     if (result.unmatchedCount > 0) {
       toast.add({ title: 'Partial import', description: `${result.unmatchedCount} driver(s) could not be matched`, color: 'warning' })
-    }
-    else {
+    } else {
       toast.add({ title: 'Results imported', description: 'Review and save below', color: 'success', icon: 'i-lucide-check' })
     }
     resultPositions.value = result.positions as (string | null)[]
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Import failed', description: e?.data?.message || 'No results available yet', color: 'error' })
-  }
-  finally {
+  } finally {
     importingResult.value = false
   }
 }
@@ -577,29 +478,48 @@ const tabs = [
         <template #seed>
           <div class="py-6 flex flex-col gap-6">
             <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Setup</h3>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Setup
+              </h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex items-center gap-3 min-w-0">
                     <UIcon name="i-lucide-database" class="size-4 text-f1-600 shrink-0" />
                     <div class="min-w-0">
-                      <p class="font-bold text-sm">Import 2026 season data</p>
-                      <p class="text-xs text-zinc-500">Loads the official 11 teams, 22 drivers, and 24 races. Safe to run multiple times — existing data is updated.</p>
+                      <p class="font-bold text-sm">
+                        Import 2026 season data
+                      </p>
+                      <p class="text-xs text-zinc-500">
+                        Loads the official 11 teams, 22 drivers, and 24 races. Safe to run multiple times — existing data is updated.
+                      </p>
                     </div>
                   </div>
-                  <UButton label="Import" icon="i-lucide-download" :loading="seeding" size="sm" class="shrink-0" @click="seedData" />
+                  <UButton
+                    label="Import"
+                    icon="i-lucide-download"
+                    :loading="seeding"
+                    size="sm"
+                    class="shrink-0"
+                    @click="seedData"
+                  />
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Testing</h3>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Testing
+              </h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
                 <div class="flex items-center gap-3 mb-2">
                   <UIcon name="i-lucide-flask-conical" class="size-4 text-yellow-500 shrink-0" />
                   <div>
-                    <p class="font-bold text-sm">Simulate a championship</p>
-                    <p class="text-xs text-zinc-500">Creates 5 test players with random predictions and results. You can inject them into an existing league to test standings, scoring and leaderboard.</p>
+                    <p class="font-bold text-sm">
+                      Simulate a championship
+                    </p>
+                    <p class="text-xs text-zinc-500">
+                      Creates 5 test players with random predictions and results. You can inject them into an existing league to test standings, scoring and leaderboard.
+                    </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-3 mt-3 pl-7 flex-wrap">
@@ -624,27 +544,55 @@ const tabs = [
             </div>
 
             <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Danger zone</h3>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Danger zone
+              </h3>
               <div class="rounded-xl border border-red-900/20 bg-red-950/10 overflow-hidden">
                 <div class="flex items-center justify-between gap-4 px-4 py-3 border-b border-red-900/10">
                   <div class="flex items-center gap-3 min-w-0">
                     <UIcon name="i-lucide-rotate-ccw" class="size-4 text-zinc-400 shrink-0" />
                     <div class="min-w-0">
-                      <p class="font-bold text-sm">Reset simulation</p>
-                      <p class="text-xs text-zinc-500">Removes the 5 test players and clears all race results. Your account and real players are kept.</p>
+                      <p class="font-bold text-sm">
+                        Reset simulation
+                      </p>
+                      <p class="text-xs text-zinc-500">
+                        Removes the 5 test players and clears all race results. Your account and real players are kept.
+                      </p>
                     </div>
                   </div>
-                  <UButton label="Reset" icon="i-lucide-rotate-ccw" :loading="resetting" size="sm" variant="outline" color="neutral" class="shrink-0" @click="resetSimulation" />
+                  <UButton
+                    label="Reset"
+                    icon="i-lucide-rotate-ccw"
+                    :loading="resetting"
+                    size="sm"
+                    variant="outline"
+                    color="neutral"
+                    class="shrink-0"
+                    @click="resetSimulation"
+                  />
                 </div>
                 <div class="flex items-center justify-between gap-4 px-4 py-3">
                   <div class="flex items-center gap-3 min-w-0">
                     <UIcon name="i-lucide-trash-2" class="size-4 text-red-400 shrink-0" />
                     <div class="min-w-0">
-                      <p class="font-bold text-sm">Clear all predictions & results</p>
-                      <p class="text-xs text-zinc-500">Permanently deletes every prediction and race result. Teams, drivers, races, and user accounts are preserved.</p>
+                      <p class="font-bold text-sm">
+                        Clear all predictions & results
+                      </p>
+                      <p class="text-xs text-zinc-500">
+                        Permanently deletes every prediction and race result. Teams, drivers, races, and user accounts are preserved.
+                      </p>
                     </div>
                   </div>
-                  <UButton label="Clear all" icon="i-lucide-trash-2" :loading="resetting" size="sm" variant="outline" color="error" class="shrink-0" @click="resetAllData" />
+                  <UButton
+                    label="Clear all"
+                    icon="i-lucide-trash-2"
+                    :loading="resetting"
+                    size="sm"
+                    variant="outline"
+                    color="error"
+                    class="shrink-0"
+                    @click="resetAllData"
+                  />
                 </div>
               </div>
             </div>
@@ -654,17 +602,30 @@ const tabs = [
         <template #results>
           <div class="py-6 flex flex-col gap-6 max-w-xl">
             <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Auto-import</h3>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Auto-import
+              </h3>
               <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex items-center gap-3 min-w-0">
                     <UIcon name="i-lucide-cloud-download" class="size-4 text-[#E10600] shrink-0" />
                     <div class="min-w-0">
-                      <p class="font-bold text-sm">Import all missing results</p>
-                      <p class="text-xs text-zinc-500">Fetches results from the F1 API for all completed races. Also runs automatically every hour via cron.</p>
+                      <p class="font-bold text-sm">
+                        Import all missing results
+                      </p>
+                      <p class="text-xs text-zinc-500">
+                        Fetches results from the F1 API for all completed races. Also runs automatically every hour via cron.
+                      </p>
                     </div>
                   </div>
-                  <UButton label="Import" icon="i-lucide-download" :loading="autoImporting" size="sm" class="shrink-0" @click="autoImportResults" />
+                  <UButton
+                    label="Import"
+                    icon="i-lucide-download"
+                    :loading="autoImporting"
+                    size="sm"
+                    class="shrink-0"
+                    @click="autoImportResults"
+                  />
                 </div>
                 <div v-if="autoImportResult" class="mt-3 ml-7 flex flex-wrap gap-3 text-xs">
                   <span class="flex items-center gap-1.5">
@@ -684,7 +645,9 @@ const tabs = [
             </div>
 
             <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Manual entry</h3>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Manual entry
+              </h3>
               <div class="flex items-center gap-3 mb-4">
                 <USelectMenu
                   v-model="selectedResultRaceId"
@@ -734,10 +697,14 @@ const tabs = [
         <template #leagues>
           <div class="py-6">
             <div class="flex items-center justify-between mb-4 gap-4">
-              <h2 class="text-lg font-black uppercase tracking-tight">All Leagues</h2>
+              <h2 class="text-lg font-black uppercase tracking-tight">
+                All Leagues
+              </h2>
               <div class="flex items-center gap-3">
                 <UInput v-model="leagueSearch" placeholder="Search leagues..." icon="i-lucide-search" size="sm" class="w-52" />
-                <UBadge v-if="adminLeagues" color="neutral" variant="subtle">{{ filteredLeagues.length }}</UBadge>
+                <UBadge v-if="adminLeagues" color="neutral" variant="subtle">
+                  {{ filteredLeagues.length }}
+                </UBadge>
               </div>
             </div>
 
@@ -750,12 +717,24 @@ const tabs = [
               <table class="w-full">
                 <thead>
                   <tr class="border-b border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                    <th class="text-left px-4 py-2.5">Name</th>
-                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">Slug</th>
-                    <th class="text-right px-3 py-2.5 w-20">Members</th>
-                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">Created by</th>
-                    <th class="text-center px-3 py-2.5 w-20">Pitwall</th>
-                    <th class="text-left px-4 py-2.5 w-28">Created</th>
+                    <th class="text-left px-4 py-2.5">
+                      Name
+                    </th>
+                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">
+                      Slug
+                    </th>
+                    <th class="text-right px-3 py-2.5 w-20">
+                      Members
+                    </th>
+                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">
+                      Created by
+                    </th>
+                    <th class="text-center px-3 py-2.5 w-20">
+                      Pitwall
+                    </th>
+                    <th class="text-left px-4 py-2.5 w-28">
+                      Created
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -764,14 +743,24 @@ const tabs = [
                     :key="league.id"
                     class="border-b border-zinc-800/50 last:border-0"
                   >
-                    <td class="px-4 py-3 font-semibold">{{ league.name }}</td>
-                    <td class="px-3 py-3 text-sm text-zinc-500 font-mono hidden sm:table-cell">{{ league.slug }}</td>
-                    <td class="px-3 py-3 text-right tabular-nums text-sm">{{ league.memberCount }}</td>
-                    <td class="px-3 py-3 text-sm text-zinc-400 hidden sm:table-cell">{{ league.creatorName }}</td>
+                    <td class="px-4 py-3 font-semibold">
+                      {{ league.name }}
+                    </td>
+                    <td class="px-3 py-3 text-sm text-zinc-500 font-mono hidden sm:table-cell">
+                      {{ league.slug }}
+                    </td>
+                    <td class="px-3 py-3 text-right tabular-nums text-sm">
+                      {{ league.memberCount }}
+                    </td>
+                    <td class="px-3 py-3 text-sm text-zinc-400 hidden sm:table-cell">
+                      {{ league.creatorName }}
+                    </td>
                     <td class="px-3 py-3 text-center">
                       <USwitch :model-value="league.pitwallEnabled" @update:model-value="togglePitwall(league.id, $event)" />
                     </td>
-                    <td class="px-4 py-3 text-xs text-zinc-500">{{ new Date(league.createdAt).toLocaleDateString() }}</td>
+                    <td class="px-4 py-3 text-xs text-zinc-500">
+                      {{ new Date(league.createdAt).toLocaleDateString() }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -786,85 +775,87 @@ const tabs = [
         <template #users>
           <div class="py-6">
             <div class="flex items-center justify-between mb-4 gap-4">
-              <UBadge color="neutral" variant="subtle">{{ filteredUsers.length }} user{{ filteredUsers.length !== 1 ? 's' : '' }}</UBadge>
+              <UBadge color="neutral" variant="subtle">
+                {{ filteredUsers.length }} user{{ filteredUsers.length !== 1 ? 's' : '' }}
+              </UBadge>
               <UInput v-model="userSearch" placeholder="Search users..." icon="i-lucide-search" size="sm" class="w-52" />
             </div>
 
             <div class="flex flex-col gap-2">
-            <div
-              v-for="u in paginatedUsers"
-              :key="u.id"
-              class="rounded-xl border bg-zinc-900/50 p-4"
-              :class="u.id === currentUser?.id ? 'border-primary/30' : 'border-zinc-800'"
-            >
-              <template v-if="editingUser?.id === u.id">
-                <div class="flex flex-col gap-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <UFormField label="Name">
-                      <UInput v-model="editingUser.name" size="sm" class="w-full" />
-                    </UFormField>
-                    <UFormField label="Email">
-                      <UInput v-model="editingUser.email" size="sm" class="w-full" />
-                    </UFormField>
+              <div
+                v-for="u in paginatedUsers"
+                :key="u.id"
+                class="rounded-xl border bg-zinc-900/50 p-4"
+                :class="u.id === currentUser?.id ? 'border-primary/30' : 'border-zinc-800'"
+              >
+                <template v-if="editingUser?.id === u.id">
+                  <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-2 gap-3">
+                      <UFormField label="Name">
+                        <UInput v-model="editingUser.name" size="sm" class="w-full" />
+                      </UFormField>
+                      <UFormField label="Email">
+                        <UInput v-model="editingUser.email" size="sm" class="w-full" />
+                      </UFormField>
+                    </div>
+                    <div class="flex gap-2">
+                      <UButton label="Save" size="xs" icon="i-lucide-check" :loading="savingUser" @click="saveUser" />
+                      <UButton label="Cancel" size="xs" variant="ghost" color="neutral" @click="editingUser = null" />
+                    </div>
                   </div>
-                  <div class="flex gap-2">
-                    <UButton label="Save" size="xs" icon="i-lucide-check" :loading="savingUser" @click="saveUser" />
-                    <UButton label="Cancel" size="xs" variant="ghost" color="neutral" @click="editingUser = null" />
-                  </div>
-                </div>
-              </template>
+                </template>
 
-              <template v-else>
-                <div class="flex items-center justify-between gap-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <UserAvatar :image="u.image" :name="u.name" size="md" />
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm truncate">{{ u.name }}</span>
-                        <span v-if="u.id === currentUser?.id" class="text-[10px] text-primary font-bold uppercase">you</span>
+                <template v-else>
+                  <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <UserAvatar :image="u.image" :name="u.name" size="md" />
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-sm truncate">{{ u.name }}</span>
+                          <span v-if="u.id === currentUser?.id" class="text-[10px] text-primary font-bold uppercase">you</span>
+                        </div>
+                        <p class="text-xs text-zinc-500 truncate">
+                          {{ u.email }}
+                        </p>
                       </div>
-                      <p class="text-xs text-zinc-500 truncate">
-                        {{ u.email }}
-                      </p>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                      <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold tabular-nums">
+                          {{ u.predictionsCount }}
+                        </p>
+                        <p class="text-[10px] text-zinc-500">
+                          predictions
+                        </p>
+                      </div>
+                      <USelectMenu
+                        :model-value="u.role || 'user'"
+                        :items="[{ label: 'Admin', value: 'admin' }, { label: 'User', value: 'user' }]"
+                        value-key="value"
+                        size="sm"
+                        class="w-28"
+                        :disabled="u.id === currentUser?.id"
+                        @update:model-value="setUserRole(u.id, $event as string)"
+                      />
+                      <UDropdownMenu
+                        :items="[
+                          [{ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => startEditUser(u) }],
+                          ...(u.id !== currentUser?.id ? [[{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => deleteUser(u.id, u.name) }]] : []),
+                        ]"
+                      >
+                        <UButton icon="i-lucide-ellipsis-vertical" variant="ghost" color="neutral" size="xs" />
+                      </UDropdownMenu>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3 shrink-0">
-                    <div class="text-right hidden sm:block">
-                      <p class="text-sm font-bold tabular-nums">
-                        {{ u.predictionsCount }}
-                      </p>
-                      <p class="text-[10px] text-zinc-500">
-                        predictions
-                      </p>
-                    </div>
-                    <USelectMenu
-                      :model-value="u.role || 'user'"
-                      :items="[{ label: 'Admin', value: 'admin' }, { label: 'User', value: 'user' }]"
-                      value-key="value"
-                      size="sm"
-                      class="w-28"
-                      :disabled="u.id === currentUser?.id"
-                      @update:model-value="setUserRole(u.id, $event as string)"
-                    />
-                    <UDropdownMenu
-                      :items="[
-                        [{ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => startEditUser(u) }],
-                        ...(u.id !== currentUser?.id ? [[{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => deleteUser(u.id, u.name) }]] : []),
-                      ]"
-                    >
-                      <UButton icon="i-lucide-ellipsis-vertical" variant="ghost" color="neutral" size="xs" />
-                    </UDropdownMenu>
-                  </div>
-                </div>
-              </template>
-            </div>
-            <div v-if="!users?.length" class="p-8 text-center text-zinc-500 rounded-xl border border-zinc-800 bg-zinc-900/50">
-              No users yet.
-            </div>
+                </template>
+              </div>
+              <div v-if="!users?.length" class="p-8 text-center text-zinc-500 rounded-xl border border-zinc-800 bg-zinc-900/50">
+                No users yet.
+              </div>
 
-            <div v-if="filteredUsers.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
-              <UPagination v-model:page="userPage" :total="filteredUsers.length" :items-per-page="ITEMS_PER_PAGE" size="sm" />
-            </div>
+              <div v-if="filteredUsers.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
+                <UPagination v-model:page="userPage" :total="filteredUsers.length" :items-per-page="ITEMS_PER_PAGE" size="sm" />
+              </div>
             </div>
           </div>
         </template>

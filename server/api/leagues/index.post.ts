@@ -68,8 +68,7 @@ export default defineEventHandler(async (event) => {
 
     log.set({ league: { id: league.id, slug: league.slug }, result: 'created' })
     return league
-  }
-  catch (e: any) {
+  } catch (e: any) {
     if (e.statusCode) throw e
 
     const dbCode = e?.code ?? e?.cause?.code ?? ''

@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
       .update(schema.userPreferences)
       .set({ notificationsEnabled: body.enabled })
       .where(eq(schema.userPreferences.userId, user.id))
-  }
-  else {
+  } else {
     await db
       .insert(schema.userPreferences)
       .values({ userId: user.id, notificationsEnabled: body.enabled })

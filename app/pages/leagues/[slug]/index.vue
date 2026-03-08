@@ -54,14 +54,20 @@ const totalRaces = computed(() => races.value?.length ?? 0)
   <UContainer class="py-8">
     <div v-if="leagueNotFound" class="py-16 text-center">
       <UIcon name="i-lucide-search-x" class="size-12 mx-auto mb-4 text-zinc-700" />
-      <p class="text-xl font-bold mb-2">League not found</p>
-      <p class="text-zinc-400 mb-6">This league doesn't exist or you don't have access to it.</p>
+      <p class="text-xl font-bold mb-2">
+        League not found
+      </p>
+      <p class="text-zinc-400 mb-6">
+        This league doesn't exist or you don't have access to it.
+      </p>
       <UButton to="/" label="Back to home" variant="outline" />
     </div>
 
     <div v-else-if="!league" class="py-16 text-center">
       <UIcon name="i-lucide-loader" class="size-8 animate-spin text-zinc-600 mx-auto mb-4" />
-      <p class="text-zinc-500">Loading league...</p>
+      <p class="text-zinc-500">
+        Loading league...
+      </p>
     </div>
 
     <template v-else>

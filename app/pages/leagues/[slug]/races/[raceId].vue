@@ -100,11 +100,9 @@ async function submitPrediction() {
     })
     toast.add({ title: 'Prediction saved!', color: 'success', icon: 'i-lucide-check' })
     await refreshPrediction()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || 'Failed to save', color: 'error' })
-  }
-  finally {
+  } finally {
     saving.value = false
   }
 }
@@ -126,11 +124,9 @@ async function importFrom(fromLeagueId: string) {
     })
     toast.add({ title: 'Prediction imported!', color: 'success', icon: 'i-lucide-check' })
     await refreshPrediction()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Import failed', description: e?.data?.message || 'Could not import', color: 'error' })
-  }
-  finally {
+  } finally {
     importing.value = false
   }
 }
@@ -163,9 +159,14 @@ const predictionScoring = computed(() => {
 
     const d = Math.abs(i - actualIndex)
     let points = 1
-    if (d === 0) { points = 5; exactHits++ }
-    else if (d === 1) points = 3
-    else if (d === 2) points = 2
+    if (d === 0) {
+      points = 5
+      exactHits++
+    } else if (d === 1) {
+      points = 3 
+    } else if (d === 2) {
+      points = 2 
+    }
 
     total += points
     details.push({ driverId, predicted: i + 1, actual: actualIndex + 1, diff: d, points })
@@ -180,14 +181,6 @@ function scoringColor(diff: number | null): string {
   if (diff === 1) return 'text-yellow-400 bg-yellow-500/10'
   if (diff === 2) return 'text-orange-400 bg-orange-500/10'
   return 'text-zinc-500 bg-zinc-800/50'
-}
-
-function scoringLabel(diff: number | null): string {
-  if (diff === null) return 'Not in Top 10'
-  if (diff === 0) return 'Exact'
-  if (diff === 1) return 'Off by 1'
-  if (diff === 2) return 'Off by 2'
-  return `Off by ${diff}`
 }
 
 function scorePrediction(positions: string[]) {
@@ -208,9 +201,14 @@ function scorePrediction(positions: string[]) {
 
     const d = Math.abs(i - actualIndex)
     let points = 1
-    if (d === 0) { points = 5; exactHits++ }
-    else if (d === 1) points = 3
-    else if (d === 2) points = 2
+    if (d === 0) {
+      points = 5
+      exactHits++
+    } else if (d === 1) {
+      points = 3 
+    } else if (d === 2) {
+      points = 2 
+    }
 
     total += points
     details.push({ driverId, predicted: i + 1, actual: actualIndex + 1, diff: d, points })
@@ -229,8 +227,9 @@ watch(raceRound, async (round) => {
   if (raceResult.value) {
     try {
       f1RaceData.value = await $fetch<any[]>(`/api/f1/race/${round}`)
+    } catch {
+      f1RaceData.value = [] 
     }
-    catch { f1RaceData.value = [] }
   }
 }, { immediate: true })
 
@@ -239,8 +238,9 @@ watch(raceRound, async (round) => {
   try {
     const data = await $fetch<any[]>(`/api/f1/qualifying/${round}`)
     qualifyingGrid.value = data ?? []
+  } catch {
+    qualifyingGrid.value = [] 
   }
-  catch { qualifyingGrid.value = [] }
 }, { immediate: true })
 
 function useQualifyingOrder() {
@@ -306,7 +306,9 @@ const teamColorMap: Record<string, string> = {
         <div class="p-6">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-black uppercase tracking-tight">{{ race.name }}</h1>
+              <h1 class="text-2xl font-black uppercase tracking-tight">
+                {{ race.name }}
+              </h1>
               <div class="flex items-center gap-3 text-sm text-zinc-400 mt-2">
                 <span class="flex items-center gap-1">
                   <UIcon name="i-lucide-map-pin" class="size-3.5" />
@@ -320,11 +322,15 @@ const teamColorMap: Record<string, string> = {
           </div>
           <div v-if="!isLocked" class="mt-4 pt-4 border-t border-zinc-800">
             <div v-if="isOpen">
-              <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Predictions lock in</p>
+              <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">
+                Predictions lock in
+              </p>
               <CountdownTimer :target-date="(race as any).lockTime" />
             </div>
             <div v-else>
-              <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Predictions open in</p>
+              <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">
+                Predictions open in
+              </p>
               <CountdownTimer :target-date="(race as any).openTime" />
             </div>
           </div>
@@ -335,7 +341,9 @@ const teamColorMap: Record<string, string> = {
         <div>
           <div v-if="!isLocked && !isOpen" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
             <UIcon name="i-lucide-clock" class="size-10 mx-auto mb-3 text-zinc-600" />
-            <p class="font-bold mb-1">Predictions not open yet</p>
+            <p class="font-bold mb-1">
+              Predictions not open yet
+            </p>
             <p class="text-sm text-zinc-500">
               Predictions open {{ new Date((race as any).openTime).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) }}
               at {{ new Date((race as any).openTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) }}.
@@ -344,10 +352,20 @@ const teamColorMap: Record<string, string> = {
 
           <div v-if="canPredict" class="mb-8">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-black uppercase tracking-tight">Your Prediction</h2>
+              <h2 class="text-lg font-black uppercase tracking-tight">
+                Your Prediction
+              </h2>
               <div class="flex items-center gap-3">
                 <span class="text-sm text-zinc-500 tabular-nums">{{ filledCount }}/10</span>
-                <UButton v-if="filledCount > 0" label="Clear" icon="i-lucide-x" size="xs" variant="ghost" color="neutral" @click="clearPrediction" />
+                <UButton
+                  v-if="filledCount > 0"
+                  label="Clear"
+                  icon="i-lucide-x"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  @click="clearPrediction"
+                />
               </div>
             </div>
 
@@ -361,8 +379,24 @@ const teamColorMap: Record<string, string> = {
                       <DriverBadge v-if="driverById(element.id)" v-bind="driverById(element.id)!" compact />
                     </div>
                     <div class="flex items-center gap-0.5 shrink-0">
-                      <UButton icon="i-lucide-chevron-up" variant="ghost" color="neutral" size="xs" :disabled="index === 0" class="sm:hidden" @click="moveUp(index)" />
-                      <UButton icon="i-lucide-chevron-down" variant="ghost" color="neutral" size="xs" :disabled="index === predictionList.length - 1" class="sm:hidden" @click="moveDown(index)" />
+                      <UButton
+                        icon="i-lucide-chevron-up"
+                        variant="ghost"
+                        color="neutral"
+                        size="xs"
+                        :disabled="index === 0"
+                        class="sm:hidden"
+                        @click="moveUp(index)"
+                      />
+                      <UButton
+                        icon="i-lucide-chevron-down"
+                        variant="ghost"
+                        color="neutral"
+                        size="xs"
+                        :disabled="index === predictionList.length - 1"
+                        class="sm:hidden"
+                        @click="moveDown(index)"
+                      />
                       <UButton icon="i-lucide-x" variant="ghost" color="neutral" size="xs" @click="removeDriver(index)" />
                     </div>
                   </div>
@@ -379,8 +413,17 @@ const teamColorMap: Record<string, string> = {
 
             <div v-if="availableDrivers.length > 0">
               <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">Tap to add</p>
-                <UInput v-if="availableDrivers.length > 6" v-model="driverSearch" placeholder="Filter..." icon="i-lucide-search" size="xs" class="w-36" />
+                <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">
+                  Tap to add
+                </p>
+                <UInput
+                  v-if="availableDrivers.length > 6"
+                  v-model="driverSearch"
+                  placeholder="Filter..."
+                  icon="i-lucide-search"
+                  size="xs"
+                  class="w-36"
+                />
               </div>
               <div class="flex flex-wrap gap-1.5">
                 <button
@@ -417,14 +460,22 @@ const teamColorMap: Record<string, string> = {
 
           <div v-if="isLocked && !myPrediction" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
             <UIcon name="i-lucide-circle-slash" class="size-8 mx-auto mb-2 text-zinc-600" />
-            <p class="font-bold text-sm mb-1">No prediction submitted</p>
-            <p class="text-xs text-zinc-500">You didn't submit a prediction for this race in this league.</p>
+            <p class="font-bold text-sm mb-1">
+              No prediction submitted
+            </p>
+            <p class="text-xs text-zinc-500">
+              You didn't submit a prediction for this race in this league.
+            </p>
           </div>
 
           <div v-if="isLocked && !(race as any)?.result" class="mb-8 rounded-xl border border-yellow-900/30 bg-yellow-950/10 p-6 text-center">
             <UIcon name="i-lucide-clock" class="size-8 mx-auto mb-2 text-yellow-500/60" />
-            <p class="font-bold text-sm mb-1">Waiting for race results</p>
-            <p class="text-xs text-zinc-500 mb-3">Results will appear here once the race is finished and data is imported.</p>
+            <p class="font-bold text-sm mb-1">
+              Waiting for race results
+            </p>
+            <p class="text-xs text-zinc-500 mb-3">
+              Results will appear here once the race is finished and data is imported.
+            </p>
             <UButton
               v-if="isLeagueAdmin"
               :to="`/leagues/${league?.slug}/settings`"
@@ -437,7 +488,9 @@ const teamColorMap: Record<string, string> = {
 
           <div v-if="isLocked && myPrediction" class="mb-8">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-black uppercase tracking-tight">Your Prediction</h2>
+              <h2 class="text-lg font-black uppercase tracking-tight">
+                Your Prediction
+              </h2>
               <div v-if="predictionScoring" class="flex items-center gap-3">
                 <span class="text-sm text-zinc-500">{{ predictionScoring.exactHits }} exact</span>
                 <span class="font-black text-lg tabular-nums">{{ predictionScoring.total }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
@@ -469,7 +522,9 @@ const teamColorMap: Record<string, string> = {
           </div>
 
           <div v-if="(race as any).result" class="mb-8">
-            <h2 class="text-lg font-black uppercase tracking-tight mb-4">Official Result</h2>
+            <h2 class="text-lg font-black uppercase tracking-tight mb-4">
+              Official Result
+            </h2>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
               <div
                 v-for="(driverId, index) in ((race as any).result as string[])"
@@ -501,7 +556,9 @@ const teamColorMap: Record<string, string> = {
           </div>
 
           <div v-if="(standings as any)?.standings" class="mb-8">
-            <h2 class="text-lg font-black uppercase tracking-tight mb-4">Race Standings</h2>
+            <h2 class="text-lg font-black uppercase tracking-tight mb-4">
+              Race Standings
+            </h2>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
               <template v-for="(player, index) in (standings as any).standings" :key="player.userId">
                 <div
@@ -540,7 +597,9 @@ const teamColorMap: Record<string, string> = {
 
           <div v-if="canPredict" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-5 text-center">
             <UIcon name="i-lucide-eye-off" class="size-8 mx-auto mb-2 text-zinc-600" />
-            <p class="text-sm text-zinc-400">Everyone's predictions will be revealed once the race is locked.</p>
+            <p class="text-sm text-zinc-400">
+              Everyone's predictions will be revealed once the race is locked.
+            </p>
           </div>
 
           <div v-if="(allPredictions as any[])?.length" class="mb-8">

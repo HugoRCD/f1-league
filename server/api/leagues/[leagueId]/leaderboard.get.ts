@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   await requireLeagueMember(event, leagueId)
 
   const league = await getLeagueById(leagueId)
-  const season = league.season
+  const { season } = league
 
   const races = await db
     .select({ id: schema.race.id })

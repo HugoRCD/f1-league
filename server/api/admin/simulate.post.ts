@@ -34,8 +34,7 @@ export default defineEventHandler(async (event) => {
 
     if (existing) {
       userIds.push(existing.id)
-    }
-    else {
+    } else {
       const id = crypto.randomUUID()
       await db.execute(sql`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") VALUES (${id}, ${fakeUser.name}, ${fakeUser.email}, true, NOW(), NOW())`)
       userIds.push(id)
@@ -54,14 +53,12 @@ export default defineEventHandler(async (event) => {
     if (!league) throw createError({ statusCode: 404, message: 'League not found' })
     targetLeagueId = league.id
     targetLeagueSlug = league.slug
-  }
-  else {
+  } else {
     const [existing] = await db.select().from(schema.league).where(eq(schema.league.slug, 'simulation')).limit(1)
     if (existing) {
       targetLeagueId = existing.id
       targetLeagueSlug = existing.slug
-    }
-    else {
+    } else {
       const [created] = await db
         .insert(schema.league)
         .values({

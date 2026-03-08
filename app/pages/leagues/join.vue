@@ -28,8 +28,7 @@ async function onSubmit() {
     await refreshLeagues()
     toast.add({ title: `Joined ${result.league.name}!`, color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${result.league.slug}`)
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const message = e.data?.message || 'Something went wrong. Please try again.'
     error.value = message
     if (e.statusCode === 401 || e.data?.statusCode === 401) {
@@ -37,8 +36,7 @@ async function onSubmit() {
       navigateTo('/login')
       return
     }
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -58,7 +56,7 @@ async function onSubmit() {
       Enter the invite code shared by a league admin.
     </p>
 
-    <UForm :schema="schema" :state="state" class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+    <UForm :schema :state class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
       <UFormField name="inviteCode" label="Invite code" required>
         <UInput v-model="state.inviteCode" placeholder="e.g. AbC12345" size="lg" class="w-full" autofocus />
       </UFormField>
@@ -76,7 +74,7 @@ async function onSubmit() {
         type="submit"
         label="Join League"
         size="lg"
-        :loading="loading"
+        :loading
         class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
         block
       />

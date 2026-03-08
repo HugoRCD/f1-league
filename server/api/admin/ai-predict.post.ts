@@ -45,8 +45,7 @@ export default defineEventHandler(async (event) => {
 
   if (existing) {
     await db.update(schema.prediction).set({ positions: prediction }).where(eq(schema.prediction.id, existing.id))
-  }
-  else {
+  } else {
     await db.insert(schema.prediction).values({
       userId: botUser.id,
       raceId: race.id,

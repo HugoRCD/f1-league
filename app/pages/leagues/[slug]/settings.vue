@@ -18,7 +18,6 @@ const { data: members, refresh: refreshMembers } = useFetch<any[]>(
   { immediate: false },
 )
 const { data: races } = useFetch<any[]>('/api/races')
-const { data: drivers } = useFetch<any[]>('/api/drivers')
 const { data: scoring, refresh: refreshScoring } = useFetch<any>(
   () => `/api/leagues/${leagueId.value}/scoring`,
   { immediate: false },
@@ -31,8 +30,6 @@ watch(leagueId, (id) => {
     refreshScoring()
   }
 }, { immediate: true })
-
-const activeDrivers = computed<any[]>(() => drivers.value?.filter((d: any) => d.active) ?? [])
 
 const memberSearch = ref('')
 const memberPage = ref(1)
@@ -49,7 +46,9 @@ const paginatedMembers = computed(() => {
   const start = (memberPage.value - 1) * 10
   return filteredMembers.value.slice(start, start + 10)
 })
-watch(memberSearch, () => { memberPage.value = 1 })
+watch(memberSearch, () => {
+  memberPage.value = 1 
+})
 
 const leagueSchema = z.object({
   name: z.string().min(2, 'At least 2 characters').max(50, '50 characters max'),
@@ -88,11 +87,9 @@ async function saveLeague() {
     })
     toast.add({ title: 'League updated', color: 'success', icon: 'i-lucide-check' })
     await Promise.all([refreshLeague(), refreshLeagues()])
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     saving.value = false
   }
 }
@@ -109,7 +106,9 @@ async function copyInviteCode() {
   if (!code) return
   await navigator.clipboard.writeText(code)
   copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
+  setTimeout(() => {
+    copied.value = false 
+  }, 2000)
 }
 
 async function removeMember(userId: string) {
@@ -164,11 +163,9 @@ async function saveScoring() {
     })
     toast.add({ title: 'Scoring updated', color: 'success', icon: 'i-lucide-check' })
     await refreshScoring()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     savingScoring.value = false
   }
 }
@@ -180,12 +177,10 @@ async function runAiPrediction() {
   aiPredicting.value = true
   try {
     const result = await $fetch<any>('/api/admin/ai-predict', { method: 'POST', body: { raceId: aiRaceId.value, leagueId: leagueId.value } })
-    toast.add({ title: 'Pitwall has spoken', description: result.driverNames.slice(0, 5).join(' → ') + ' ...', color: 'success', icon: 'i-lucide-bot' })
-  }
-  catch (e: any) {
+    toast.add({ title: 'Pitwall has spoken', description: `${result.driverNames.slice(0, 5).join(' → ') } ...`, color: 'success', icon: 'i-lucide-bot' })
+  } catch (e: any) {
     toast.add({ title: 'AI prediction failed', description: e?.data?.message, color: 'error' })
-  }
-  finally {
+  } finally {
     aiPredicting.value = false
   }
 }
@@ -205,14 +200,18 @@ const tabs = [
       {{ league?.name }}
     </NuxtLink>
 
-    <h1 class="text-2xl font-black uppercase tracking-tight mb-6">League Settings</h1>
+    <h1 class="text-2xl font-black uppercase tracking-tight mb-6">
+      League Settings
+    </h1>
 
     <ClientOnly>
       <UTabs v-model="tab" :items="tabs" variant="link" color="neutral" size="sm">
         <template #general>
           <div class="py-6 max-w-lg flex flex-col gap-8">
             <div v-if="isLeagueAdmin">
-              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">General</h2>
+              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
+                General
+              </h2>
               <UForm :schema="leagueSchema" :state="leagueState" class="flex flex-col gap-4" @submit="saveLeague" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
                 <UFormField name="name" label="Name">
                   <UInput v-model="leagueState.name" size="lg" class="w-full" />
@@ -225,7 +224,9 @@ const tabs = [
             </div>
 
             <div v-if="isLeagueAdmin && leagueDetail">
-              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">Invite Code</h2>
+              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
+                Invite Code
+              </h2>
               <div class="flex items-center gap-3">
                 <div class="flex-1 flex items-center px-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-sm tracking-wider">
                   {{ leagueDetail.inviteCode }}
@@ -236,10 +237,26 @@ const tabs = [
             </div>
 
             <div class="border-t border-zinc-800 pt-8">
-              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-red-400 mb-4">Danger Zone</h2>
+              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-red-400 mb-4">
+                Danger Zone
+              </h2>
               <div class="flex items-center gap-3">
-                <UButton v-if="!isLeagueAdmin" label="Leave League" icon="i-lucide-log-out" variant="outline" color="error" @click="leaveLeague" />
-                <UButton v-if="isLeagueAdmin" label="Delete League" icon="i-lucide-trash-2" variant="outline" color="error" @click="deleteLeague" />
+                <UButton
+                  v-if="!isLeagueAdmin"
+                  label="Leave League"
+                  icon="i-lucide-log-out"
+                  variant="outline"
+                  color="error"
+                  @click="leaveLeague"
+                />
+                <UButton
+                  v-if="isLeagueAdmin"
+                  label="Delete League"
+                  icon="i-lucide-trash-2"
+                  variant="outline"
+                  color="error"
+                  @click="deleteLeague"
+                />
               </div>
             </div>
           </div>
@@ -251,7 +268,14 @@ const tabs = [
               <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500">
                 Members ({{ members?.length ?? 0 }})
               </h2>
-              <UInput v-if="(members?.length ?? 0) > 5" v-model="memberSearch" placeholder="Search..." icon="i-lucide-search" size="xs" class="w-40" />
+              <UInput
+                v-if="(members?.length ?? 0) > 5"
+                v-model="memberSearch"
+                placeholder="Search..."
+                icon="i-lucide-search"
+                size="xs"
+                class="w-40"
+              />
             </div>
             <div class="flex flex-col gap-1">
               <div
@@ -261,10 +285,16 @@ const tabs = [
               >
                 <UserAvatar :image="member.userImage" :name="member.userName" size="sm" />
                 <div class="flex-1 min-w-0">
-                  <p class="font-semibold text-sm truncate">{{ member.userName }}</p>
-                  <p class="text-xs text-zinc-500 truncate">{{ member.userEmail }}</p>
+                  <p class="font-semibold text-sm truncate">
+                    {{ member.userName }}
+                  </p>
+                  <p class="text-xs text-zinc-500 truncate">
+                    {{ member.userEmail }}
+                  </p>
                 </div>
-                <UBadge v-if="member.role === 'admin'" color="warning" variant="subtle" size="sm">Admin</UBadge>
+                <UBadge v-if="member.role === 'admin'" color="warning" variant="subtle" size="sm">
+                  Admin
+                </UBadge>
                 <UButton
                   v-if="isLeagueAdmin && member.role !== 'admin'"
                   icon="i-lucide-x"
@@ -285,8 +315,12 @@ const tabs = [
           <div class="py-6 max-w-xl">
             <UForm :schema="scoringSchema" :state="scoringForm" class="flex flex-col gap-6" @submit="saveScoring" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
               <div>
-                <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Points per position</h2>
-                <p class="text-xs text-zinc-600 mb-4">How many points a player earns based on how close their predicted position is to the actual result.</p>
+                <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                  Points per position
+                </h2>
+                <p class="text-xs text-zinc-600 mb-4">
+                  How many points a player earns based on how close their predicted position is to the actual result.
+                </p>
                 <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
                   <div
                     v-for="rule in [
@@ -302,8 +336,12 @@ const tabs = [
                     <div class="flex items-center gap-3 min-w-0">
                       <span class="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded tabular-nums w-8 text-center shrink-0">{{ rule.badge }}</span>
                       <div class="min-w-0">
-                        <p class="text-sm font-medium">{{ rule.label }}</p>
-                        <p class="text-xs text-zinc-600">{{ rule.desc }}</p>
+                        <p class="text-sm font-medium">
+                          {{ rule.label }}
+                        </p>
+                        <p class="text-xs text-zinc-600">
+                          {{ rule.desc }}
+                        </p>
                       </div>
                     </div>
                     <UFormField :name="rule.name" class="w-20 shrink-0">
@@ -320,15 +358,23 @@ const tabs = [
               </div>
 
               <div>
-                <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Prediction window</h2>
-                <p class="text-xs text-zinc-600 mb-4">When players can submit or edit their predictions relative to race start.</p>
+                <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                  Prediction window
+                </h2>
+                <p class="text-xs text-zinc-600 mb-4">
+                  When players can submit or edit their predictions relative to race start.
+                </p>
                 <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
                   <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
                     <div class="flex items-center gap-3">
                       <UIcon name="i-lucide-calendar-plus" class="size-4 text-zinc-400 shrink-0" />
                       <div>
-                        <p class="text-sm font-medium">Opens before race</p>
-                        <p class="text-xs text-zinc-600">How many days before the race predictions become available</p>
+                        <p class="text-sm font-medium">
+                          Opens before race
+                        </p>
+                        <p class="text-xs text-zinc-600">
+                          How many days before the race predictions become available
+                        </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
@@ -342,8 +388,12 @@ const tabs = [
                     <div class="flex items-center gap-3">
                       <UIcon name="i-lucide-lock" class="size-4 text-zinc-400 shrink-0" />
                       <div>
-                        <p class="text-sm font-medium">Locks before start</p>
-                        <p class="text-xs text-zinc-600">How many minutes before race start predictions are locked</p>
+                        <p class="text-sm font-medium">
+                          Locks before start
+                        </p>
+                        <p class="text-xs text-zinc-600">
+                          How many minutes before race start predictions are locked
+                        </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
@@ -356,7 +406,14 @@ const tabs = [
                 </div>
               </div>
 
-              <UButton type="submit" label="Save scoring" icon="i-lucide-check" :loading="savingScoring" :disabled="!isLeagueAdmin" class="self-start" />
+              <UButton
+                type="submit"
+                label="Save scoring"
+                icon="i-lucide-check"
+                :loading="savingScoring"
+                :disabled="!isLeagueAdmin"
+                class="self-start"
+              />
             </UForm>
           </div>
         </template>
@@ -377,8 +434,12 @@ const tabs = [
               <div class="flex items-center gap-3 mb-4">
                 <UIcon name="i-lucide-bot" class="size-5 text-violet-400 shrink-0" />
                 <div>
-                  <p class="font-bold text-sm">Pitwall — AI Competitor</p>
-                  <p class="text-xs text-zinc-500">Pitwall analyzes the starting grid, standings, and recent form to predict the Top 10. It plays as a regular competitor in this league.</p>
+                  <p class="font-bold text-sm">
+                    Pitwall — AI Competitor
+                  </p>
+                  <p class="text-xs text-zinc-500">
+                    Pitwall analyzes the starting grid, standings, and recent form to predict the Top 10. It plays as a regular competitor in this league.
+                  </p>
                 </div>
               </div>
               <div class="flex items-center gap-3 flex-wrap">
@@ -390,7 +451,14 @@ const tabs = [
                   size="sm"
                   class="w-52"
                 />
-                <UButton label="Let Pitwall predict" icon="i-lucide-bot" :loading="aiPredicting" :disabled="!aiRaceId" size="sm" @click="runAiPrediction" />
+                <UButton
+                  label="Let Pitwall predict"
+                  icon="i-lucide-bot"
+                  :loading="aiPredicting"
+                  :disabled="!aiRaceId"
+                  size="sm"
+                  @click="runAiPrediction"
+                />
               </div>
             </div>
           </div>
