@@ -32,8 +32,7 @@ export default defineCachedEventHandler(async () => {
     }
 
     return items
-  }
-  catch {
+  } catch {
     return []
   }
 }, { maxAge: 900, name: 'f1-news' })

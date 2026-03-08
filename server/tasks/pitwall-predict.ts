@@ -7,7 +7,7 @@ import { getPitwallUser } from '../utils/pitwall'
 export default defineTask({
   meta: {
     name: 'pitwall-predict',
-    description: 'Pitwall AI makes predictions for open races',
+    description: 'Pitwall AI makes predictions for open races in all leagues',
   },
   async run() {
     const log = createRequestLogger()
@@ -31,6 +31,21 @@ export default defineTask({
       return { result: 'Not enough drivers' }
     }
 
+    const pitwallMemberships = await db
+      .select({ leagueId: schema.leagueMember.leagueId })
+      .from(schema.leagueMember)
+      .innerJoin(schema.league, eq(schema.leagueMember.leagueId, schema.league.id))
+      .where(and(
+        eq(schema.leagueMember.userId, botUser.id),
+        eq(schema.league.pitwallEnabled, true),
+      ))
+
+    if (pitwallMemberships.length === 0) {
+      log.set({ result: 'Pitwall has no enabled leagues' })
+      log.emit()
+      return { result: 'Pitwall has no enabled leagues' }
+    }
+
     let predicted = 0
     const errors: string[] = []
 
@@ -40,30 +55,47 @@ export default defineTask({
 
       if (!window.open || window.locked) continue
 
-      const [existing] = await db.select().from(schema.prediction)
-        .where(and(eq(schema.prediction.userId, botUser.id), eq(schema.prediction.raceId, race.id)))
-        .limit(1)
+      let racePositions: string[] | null = null
 
-      if (existing) continue
+      for (const { leagueId } of pitwallMemberships) {
+        const [existing] = await db.select().from(schema.prediction)
+          .where(and(
+            eq(schema.prediction.userId, botUser.id),
+            eq(schema.prediction.raceId, race.id),
+            eq(schema.prediction.leagueId, leagueId),
+          ))
+          .limit(1)
 
-      try {
-        const { prediction } = await generatePitwallPrediction({
-          raceName: race.name,
-          raceLocation: race.location,
-          raceRound: i + 1,
-          availableDriverIds: allDrivers.map(d => ({ id: d.id, lastName: d.lastName })),
+        if (existing) continue
+
+        if (!racePositions) {
+          try {
+            const result = await generatePitwallPrediction({
+              raceName: race.name,
+              raceLocation: race.location,
+              raceRound: i + 1,
+              availableDriverIds: allDrivers.map(d => ({ id: d.id, lastName: d.lastName })),
+            })
+            racePositions = result.prediction
+          } catch (e) {
+            errors.push(race.name)
+            log.error(e instanceof Error ? e : new Error(`Pitwall failed to predict ${race.name}`))
+            break
+          }
+        }
+
+        await db.insert(schema.prediction).values({
+          userId: botUser.id,
+          raceId: race.id,
+          leagueId,
+          positions: racePositions,
         })
-
-        await db.insert(schema.prediction).values({ userId: botUser.id, raceId: race.id, positions: prediction })
         predicted++
-      } catch (e) {
-        errors.push(race.name)
-        log.error(e instanceof Error ? e : new Error(`Pitwall failed to predict ${race.name}`))
-      }  
+      }
     }
 
     log.set({ pitwall: { predicted, errors: errors.length > 0 ? errors : undefined } })
     log.emit()
-    return { result: `Pitwall predicted ${predicted} race(s)` }
+    return { result: `Pitwall predicted ${predicted} race(s) across ${pitwallMemberships.length} league(s)` }
   },
 })

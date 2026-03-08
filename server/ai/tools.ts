@@ -83,10 +83,12 @@ export const getAvailableDrivers = tool({
 })
 
 export const getLeagueStandings = tool({
-  description: 'Get the current prediction league standings showing player points, race wins, and exact predictions.',
-  inputSchema: z.object({}),
-  execute: async () => {
-    const standings = await $fetch<any[]>('/api/leaderboard').catch(() => [])
+  description: 'Get the prediction league standings for a specific league, showing player points, race wins, and exact predictions.',
+  inputSchema: z.object({
+    leagueId: z.string().describe('The league ID to get standings for'),
+  }),
+  execute: async ({ leagueId }) => {
+    const standings = await $fetch<any[]>(`/api/leagues/${leagueId}/leaderboard`).catch(() => [])
     return standings.length > 0
       ? standings.map((s: any, i: number) => `${i + 1}. ${s.userName} - ${s.totalPoints}pts, ${s.raceWins}W, ${s.totalExactHits} exact`).join('\n')
       : 'No league standings yet. The season hasn\'t started or no results have been entered.'

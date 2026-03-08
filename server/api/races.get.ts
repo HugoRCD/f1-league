@@ -19,24 +19,10 @@ export default defineEventHandler(async (event) => {
 
   const resultSet = new Set(results.map(r => r.raceId))
 
-  let userPredictionSet = new Set<string>()
-  try {
-    const session = await getUserSession(event)
-    const user = (session as any)?.user
-    if (user?.id) {
-      const predictions = await db
-        .select({ raceId: schema.prediction.raceId })
-        .from(schema.prediction)
-        .where(eq(schema.prediction.userId, user.id))
-      userPredictionSet = new Set(predictions.map(p => p.raceId))
-    }
-  } catch { /* not authenticated */ }
-
   return races.map((race, index) => ({
     ...race,
     round: index + 1,
     ...getRaceWindow(race.startAt, config),
     hasResult: resultSet.has(race.id),
-    hasPrediction: userPredictionSet.has(race.id),
   }))
 })

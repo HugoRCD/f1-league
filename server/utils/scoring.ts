@@ -67,8 +67,7 @@ export function calculateRaceScore(prediction: string[], result: string[], confi
     if (d === 0) {
       points = config.exact
       exactHits++
-    }
-    else if (d === 1) points = config.offBy1
+    } else if (d === 1) points = config.offBy1
     else if (d === 2) points = config.offBy2
     else points = config.offBy3Plus
 

@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   await requireUserSession(event, { user: { role: 'admin' } })
 
   const body = await readBody<{ target: 'simulation' | 'all' }>(event)
-  log.set({ admin: { action: 'reset', target: body.target } })
+  log.set({ action: 'reset', target: body.target })
 
   if (body.target === 'simulation') {
     const fakeUsers = await db
@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
 
     if (fakeUserIds.length > 0) {
       await db.delete(schema.prediction).where(inArray(schema.prediction.userId, fakeUserIds))
+      await db.delete(schema.leagueMember).where(inArray(schema.leagueMember.userId, fakeUserIds))
       for (const id of fakeUserIds) {
         await db.delete(schema.session).where(eq(schema.session.userId, id))
         await db.delete(schema.account).where(eq(schema.account.userId, id))
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(schema.user).where(inArray(schema.user.id, fakeUserIds))
     }
 
+    await db.delete(schema.league).where(eq(schema.league.slug, 'simulation'))
     await db.delete(schema.raceResult)
 
     log.set({ reset: { deletedUsers: fakeUserIds.length, clearedResults: true } })

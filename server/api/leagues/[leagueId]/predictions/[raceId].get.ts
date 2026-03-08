@@ -2,10 +2,9 @@ import { and, eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
-  const log = useLogger(event)
-  const { user } = await requireUserSession(event)
+  const leagueId = getRouterParam(event, 'leagueId')!
   const raceId = getRouterParam(event, 'raceId')!
-  log.set({ user: { id: user.id }, race: { id: raceId } })
+  const { user } = await requireLeagueMember(event, leagueId)
 
   const [prediction] = await db
     .select()
@@ -13,6 +12,7 @@ export default defineEventHandler(async (event) => {
     .where(and(
       eq(schema.prediction.userId, user.id),
       eq(schema.prediction.raceId, raceId),
+      eq(schema.prediction.leagueId, leagueId),
     ))
     .limit(1)
 

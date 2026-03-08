@@ -19,8 +19,7 @@ export default defineCachedEventHandler(async (event) => {
       q2: entry.Q2 ?? null,
       q3: entry.Q3 ?? null,
     }))
-  }
-  catch {
+  } catch {
     return []
   }
 }, { maxAge: 300, name: 'f1-qualifying' })

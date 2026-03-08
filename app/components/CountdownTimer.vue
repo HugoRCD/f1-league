@@ -4,6 +4,11 @@ const props = defineProps<{
   size?: 'sm' | 'lg'
 }>()
 
+const mounted = ref(false)
+onMounted(() => {
+  mounted.value = true 
+})
+
 const now = useNow({ interval: 1000 })
 
 const remaining = computed(() => {
@@ -23,7 +28,44 @@ const isUrgent = computed(() => !remaining.value.expired && remaining.value.days
 </script>
 
 <template>
-  <div v-if="remaining.expired" class="text-primary font-bold" :class="size === 'lg' ? 'text-2xl' : 'text-sm'">
+  <div v-if="!mounted" class="flex items-center" :class="size === 'lg' ? 'gap-3' : 'gap-2'">
+    <div class="text-center">
+      <div class="font-black tabular-nums" :class="size === 'lg' ? 'text-3xl' : 'text-lg'">
+        --
+      </div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        days
+      </div>
+    </div>
+    <span class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
+    <div class="text-center">
+      <div class="font-black tabular-nums" :class="size === 'lg' ? 'text-3xl' : 'text-lg'">
+        --
+      </div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        hrs
+      </div>
+    </div>
+    <span class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
+    <div class="text-center">
+      <div class="font-black tabular-nums" :class="size === 'lg' ? 'text-3xl' : 'text-lg'">
+        --
+      </div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        min
+      </div>
+    </div>
+    <span class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
+    <div class="text-center">
+      <div class="font-black tabular-nums" :class="size === 'lg' ? 'text-3xl' : 'text-lg'">
+        --
+      </div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        sec
+      </div>
+    </div>
+  </div>
+  <div v-else-if="remaining.expired" class="text-primary font-bold" :class="size === 'lg' ? 'text-2xl' : 'text-sm'">
     LOCKED
   </div>
   <div v-else class="flex items-center" :class="size === 'lg' ? 'gap-3' : 'gap-2'">
@@ -31,28 +73,36 @@ const isUrgent = computed(() => !remaining.value.expired && remaining.value.days
       <div class="font-black tabular-nums" :class="[size === 'lg' ? 'text-3xl' : 'text-lg', isUrgent ? 'text-primary' : '']">
         {{ String(remaining.days).padStart(2, '0') }}
       </div>
-      <div class="text-[10px] uppercase tracking-wider text-muted">days</div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        days
+      </div>
     </div>
     <span v-if="remaining.days > 0" class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
     <div class="text-center">
       <div class="font-black tabular-nums" :class="[size === 'lg' ? 'text-3xl' : 'text-lg', isUrgent ? 'text-primary' : '']">
         {{ String(remaining.hours).padStart(2, '0') }}
       </div>
-      <div class="text-[10px] uppercase tracking-wider text-muted">hrs</div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        hrs
+      </div>
     </div>
     <span class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
     <div class="text-center">
       <div class="font-black tabular-nums" :class="[size === 'lg' ? 'text-3xl' : 'text-lg', isUrgent ? 'text-primary' : '']">
         {{ String(remaining.minutes).padStart(2, '0') }}
       </div>
-      <div class="text-[10px] uppercase tracking-wider text-muted">min</div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        min
+      </div>
     </div>
     <span class="text-muted font-light" :class="size === 'lg' ? 'text-2xl' : 'text-lg'">:</span>
     <div class="text-center">
       <div class="font-black tabular-nums" :class="[size === 'lg' ? 'text-3xl' : 'text-lg', isUrgent ? 'text-primary' : '']">
         {{ String(remaining.seconds).padStart(2, '0') }}
       </div>
-      <div class="text-[10px] uppercase tracking-wider text-muted">sec</div>
+      <div class="text-[10px] uppercase tracking-wider text-muted">
+        sec
+      </div>
     </div>
   </div>
 </template>

@@ -32,17 +32,57 @@ export const race = pgTable('race', {
   unique('race_name_season_unique').on(table.name, table.season),
 ])
 
+export const league = pgTable('league', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  image: text('image'),
+  inviteCode: text('inviteCode').notNull().unique(),
+  season: integer('season').notNull().default(new Date().getFullYear()),
+  scoringConfig: jsonb('scoringConfig').$type<{
+    exact: number
+    offBy1: number
+    offBy2: number
+    offBy3Plus: number
+    notInTop10: number
+    lockMinutesBefore: number
+    openDaysBefore: number
+  } | null>(),
+  pitwallEnabled: boolean('pitwallEnabled').notNull().default(false),
+  createdBy: text('createdBy').notNull().references(() => authUser.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull(),
+}, table => [
+  index('league_createdBy_idx').on(table.createdBy),
+  index('league_season_idx').on(table.season),
+])
+
+export const leagueMember = pgTable('leagueMember', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  leagueId: text('leagueId').notNull().references(() => league.id, { onDelete: 'cascade' }),
+  userId: text('userId').notNull().references(() => authUser.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('member'),
+  joinedAt: timestamp('joinedAt').defaultNow().notNull(),
+}, table => [
+  unique('leagueMember_leagueId_userId_unique').on(table.leagueId, table.userId),
+  index('leagueMember_leagueId_idx').on(table.leagueId),
+  index('leagueMember_userId_idx').on(table.userId),
+])
+
 export const prediction = pgTable('prediction', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('userId').notNull().references(() => authUser.id, { onDelete: 'cascade' }),
   raceId: text('raceId').notNull().references(() => race.id, { onDelete: 'cascade' }),
+  leagueId: text('leagueId').notNull().references(() => league.id, { onDelete: 'cascade' }),
   positions: jsonb('positions').notNull().$type<string[]>(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull(),
 }, table => [
-  unique('prediction_userId_raceId_unique').on(table.userId, table.raceId),
+  unique('prediction_userId_raceId_leagueId_unique').on(table.userId, table.raceId, table.leagueId),
   index('prediction_raceId_idx').on(table.raceId),
   index('prediction_userId_idx').on(table.userId),
+  index('prediction_leagueId_idx').on(table.leagueId),
 ])
 
 export const raceResult = pgTable('raceResult', {
@@ -71,9 +111,21 @@ export const raceRelations = relations(race, ({ many, one }) => ({
   result: one(raceResult, { fields: [race.id], references: [raceResult.raceId] }),
 }))
 
+export const leagueRelations = relations(league, ({ many, one }) => ({
+  members: many(leagueMember),
+  predictions: many(prediction),
+  creator: one(authUser, { fields: [league.createdBy], references: [authUser.id] }),
+}))
+
+export const leagueMemberRelations = relations(leagueMember, ({ one }) => ({
+  league: one(league, { fields: [leagueMember.leagueId], references: [league.id] }),
+  user: one(authUser, { fields: [leagueMember.userId], references: [authUser.id] }),
+}))
+
 export const predictionRelations = relations(prediction, ({ one }) => ({
   user: one(authUser, { fields: [prediction.userId], references: [authUser.id] }),
   race: one(race, { fields: [prediction.raceId], references: [race.id] }),
+  league: one(league, { fields: [prediction.leagueId], references: [league.id] }),
 }))
 
 export const raceResultRelations = relations(raceResult, ({ one }) => ({

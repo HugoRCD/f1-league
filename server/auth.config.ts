@@ -16,7 +16,7 @@ export default defineServerAuth(() => ({
       otpLength: 6,
       expiresIn: 600,
       async sendVerificationOTP({ email, otp }) {
-        const baseUrl = process.env.BETTER_AUTH_URL || process.env.xd || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000'
+        const baseUrl = process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
         const magicLink = `${baseUrl}/login?email=${encodeURIComponent(email)}&code=${otp}`
         await sendOtpEmail(email, otp, magicLink)
       },

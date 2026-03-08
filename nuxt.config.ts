@@ -80,9 +80,8 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { isr: { expiration: 60 } },
     '/races': { isr: { expiration: 30 } },
-    '/leaderboard': { isr: { expiration: 30 }, auth: 'user' },
     '/settings': { auth: 'user' },
-    '/races/**': { auth: 'user' },
+    '/leagues/**': { auth: 'user' },
     '/admin/**': { auth: { user: { role: 'admin' } }, isr: false },
     '/login': { auth: 'guest' },
     '/register': { auth: 'guest' },
