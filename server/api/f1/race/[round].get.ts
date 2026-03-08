@@ -9,15 +9,25 @@ export default defineCachedEventHandler(async (event) => {
     const races = data.MRData?.RaceTable?.Races ?? []
     if (!races.length) return []
 
-    return (races[0].Results ?? []).map((entry: any) => ({
+    const raceData = races[0]
+
+    return (raceData.Results ?? []).map((entry: any) => ({
       position: Number(entry.position),
       driverName: `${entry.Driver?.givenName ?? ''} ${entry.Driver?.familyName ?? ''}`.trim(),
       driverCode: entry.Driver?.code ?? '',
+      driverId: entry.Driver?.driverId ?? '',
       teamName: entry.Constructor?.name ?? '',
       teamId: entry.Constructor?.constructorId ?? '',
       status: entry.status ?? 'Finished',
       laps: entry.laps ? Number(entry.laps) : null,
       time: entry.Time?.time ?? null,
+      points: entry.points ? Number(entry.points) : 0,
+      grid: entry.grid ? Number(entry.grid) : null,
+      fastestLap: entry.FastestLap ? {
+        rank: Number(entry.FastestLap.rank),
+        lap: Number(entry.FastestLap.lap),
+        time: entry.FastestLap.Time?.time ?? null,
+      } : null,
     }))
   }
   catch {

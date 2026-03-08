@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { z } from 'zod'
+
 definePageMeta({ auth: 'guest' })
 useSeoMeta({ title: 'Sign in — F1 League' })
 
@@ -12,20 +14,27 @@ const queryCode = route.query.code as string | undefined
 const isMagicLink = !!(queryEmail && queryCode)
 
 const step = ref<'email' | 'otp' | 'verifying'>(isMagicLink ? 'verifying' : 'email')
-const email = ref(queryEmail || '')
-const otp = ref(queryCode || '')
 const loading = ref(isMagicLink)
+
+const emailSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+})
+const emailState = reactive({ email: queryEmail || '' })
+
+const otpSchema = z.object({
+  otp: z.string().length(6, 'Code must be 6 digits'),
+})
+const otpState = reactive({ otp: queryCode || '' })
 
 onMounted(() => {
   if (isMagicLink) verifyCode()
 })
 
 async function sendCode() {
-  if (!email.value) return
   loading.value = true
   try {
-    await client.emailOtp.sendVerificationOtp({
-      email: email.value,
+    await client!.emailOtp.sendVerificationOtp({
+      email: emailState.email,
       type: 'sign-in',
     })
     step.value = 'otp'
@@ -40,12 +49,11 @@ async function sendCode() {
 }
 
 async function verifyCode() {
-  if (!otp.value) return
   loading.value = true
   try {
-    await client.signIn.emailOtp({
-      email: email.value,
-      otp: otp.value,
+    await client!.signIn.emailOtp({
+      email: emailState.email,
+      otp: otpState.otp,
     })
     navigateTo('/')
   }
@@ -77,20 +85,20 @@ async function verifyCode() {
           <p class="text-sm text-zinc-400">Signing you in...</p>
         </div>
 
-        <form v-else-if="step === 'email'" class="flex flex-col gap-4" @submit.prevent="sendCode">
+        <UForm v-else-if="step === 'email'" :schema="emailSchema" :state="emailState" class="flex flex-col gap-4" @submit="sendCode" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
           <UFormField label="Email" name="email" required>
-            <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" class="w-full" autofocus />
+            <UInput v-model="emailState.email" type="email" placeholder="you@example.com" size="lg" class="w-full" autofocus />
           </UFormField>
           <UButton type="submit" label="Send login code" icon="i-lucide-mail" block :loading="loading" size="lg" class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0" />
-        </form>
+        </UForm>
 
-        <form v-else class="flex flex-col gap-4" @submit.prevent="verifyCode">
+        <UForm v-else :schema="otpSchema" :state="otpState" class="flex flex-col gap-4" @submit="verifyCode" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
           <p class="text-sm text-zinc-400">
-            Code sent to <span class="text-white font-medium">{{ email }}</span>
+            Code sent to <span class="text-white font-medium">{{ emailState.email }}</span>
           </p>
           <UFormField label="Login code" name="otp" required>
             <UInput
-              v-model="otp"
+              v-model="otpState.otp"
               placeholder="000000"
               size="lg"
               class="w-full text-center font-mono text-lg tracking-[0.3em]"
@@ -102,7 +110,7 @@ async function verifyCode() {
           <button type="button" class="text-xs text-zinc-500 hover:text-white transition-colors" @click="step = 'email'">
             Use a different email
           </button>
-        </form>
+        </UForm>
       </div>
 
       <p class="text-center text-sm text-zinc-500 mt-6">

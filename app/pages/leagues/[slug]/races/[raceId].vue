@@ -4,33 +4,41 @@ import draggable from 'vuedraggable'
 const route = useRoute()
 const toast = useToast()
 const raceId = route.params.raceId as string
-const { league, leagueId } = useCurrentLeague()
+const { league, leagueId, isLeagueAdmin } = useCurrentLeague()
 const { data: leagues } = useLeagues()
+
+const { data: race, status: raceStatus } = useFetch(`/api/races/${raceId}`)
+const { data: drivers } = useCachedFetch<any[]>('/api/drivers')
 
 useHead({
   title: computed(() => race.value ? `${race.value.name} — ${league.value?.name ?? 'League'}` : 'Race'),
 })
 
-const { data: race, status: raceStatus } = useFetch(`/api/races/${raceId}`)
-const { data: drivers } = useCachedFetch<any[]>('/api/drivers')
-
 const { data: myPrediction, refresh: refreshPrediction } = useFetch<any>(
-  () => leagueId.value ? `/api/leagues/${leagueId.value}/predictions/${raceId}` : '',
-  { watch: [leagueId] },
+  () => `/api/leagues/${leagueId.value}/predictions/${raceId}`,
+  { immediate: false },
 )
 
-const { data: standings, refresh: refreshStandings } = useLazyFetch(
-  () => leagueId.value ? `/api/leagues/${leagueId.value}/races/${raceId}/standings` : '',
-  { watch: [leagueId] },
+const { data: standings, refresh: refreshStandings } = useFetch<any>(
+  () => `/api/leagues/${leagueId.value}/races/${raceId}/standings`,
+  { immediate: false },
 )
 
-const { data: allPredictions, execute: fetchAllPredictions } = useLazyFetch(
-  () => leagueId.value ? `/api/leagues/${leagueId.value}/predictions/${raceId}/all` : '',
-  { immediate: false, watch: [leagueId] },
+const { data: allPredictions, execute: fetchAllPredictions } = useFetch<any>(
+  () => `/api/leagues/${leagueId.value}/predictions/${raceId}/all`,
+  { immediate: false },
 )
+
+watch(leagueId, (id) => {
+  if (id) {
+    refreshPrediction()
+    refreshStandings()
+  }
+}, { immediate: true })
 
 const activeDrivers = computed<any[]>(() => drivers.value?.filter((d: any) => d.active) ?? [])
 const saving = ref(false)
+const expandedStanding = ref<string | null>(null)
 
 const isLocked = computed(() => race.value?.locked ?? false)
 const isOpen = computed(() => race.value?.open ?? false)
@@ -134,9 +142,97 @@ watch(isLocked, async (locked) => {
   }
 }, { immediate: true })
 
+const raceResult = computed(() => (race.value as any)?.result as string[] | null ?? null)
+
+const predictionScoring = computed(() => {
+  if (!myPrediction.value?.positions || !raceResult.value) return null
+  const predicted = myPrediction.value.positions as string[]
+  const result = raceResult.value
+  const details: { driverId: string, predicted: number, actual: number | null, points: number, diff: number | null }[] = []
+  let total = 0
+  let exactHits = 0
+
+  for (let i = 0; i < predicted.length; i++) {
+    const driverId = predicted[i]
+    const actualIndex = result.indexOf(driverId)
+
+    if (actualIndex === -1) {
+      details.push({ driverId, predicted: i + 1, actual: null, points: 0, diff: null })
+      continue
+    }
+
+    const d = Math.abs(i - actualIndex)
+    let points = 1
+    if (d === 0) { points = 5; exactHits++ }
+    else if (d === 1) points = 3
+    else if (d === 2) points = 2
+
+    total += points
+    details.push({ driverId, predicted: i + 1, actual: actualIndex + 1, diff: d, points })
+  }
+
+  return { details, total, exactHits }
+})
+
+function scoringColor(diff: number | null): string {
+  if (diff === null) return 'text-red-400 bg-red-500/10'
+  if (diff === 0) return 'text-emerald-400 bg-emerald-500/10'
+  if (diff === 1) return 'text-yellow-400 bg-yellow-500/10'
+  if (diff === 2) return 'text-orange-400 bg-orange-500/10'
+  return 'text-zinc-500 bg-zinc-800/50'
+}
+
+function scoringLabel(diff: number | null): string {
+  if (diff === null) return 'Not in Top 10'
+  if (diff === 0) return 'Exact'
+  if (diff === 1) return 'Off by 1'
+  if (diff === 2) return 'Off by 2'
+  return `Off by ${diff}`
+}
+
+function scorePrediction(positions: string[]) {
+  if (!raceResult.value) return null
+  const result = raceResult.value
+  const details: { driverId: string, predicted: number, actual: number | null, points: number, diff: number | null }[] = []
+  let total = 0
+  let exactHits = 0
+
+  for (let i = 0; i < positions.length; i++) {
+    const driverId = positions[i]
+    const actualIndex = result.indexOf(driverId)
+
+    if (actualIndex === -1) {
+      details.push({ driverId, predicted: i + 1, actual: null, points: 0, diff: null })
+      continue
+    }
+
+    const d = Math.abs(i - actualIndex)
+    let points = 1
+    if (d === 0) { points = 5; exactHits++ }
+    else if (d === 1) points = 3
+    else if (d === 2) points = 2
+
+    total += points
+    details.push({ driverId, predicted: i + 1, actual: actualIndex + 1, diff: d, points })
+  }
+
+  return { details, total, exactHits }
+}
+
 const raceRound = computed(() => (race.value as any)?.round ?? null)
 const qualifyingGrid = shallowRef<any[]>([])
 const hasQuali = computed(() => qualifyingGrid.value.length > 0)
+
+const f1RaceData = shallowRef<any[]>([])
+watch(raceRound, async (round) => {
+  if (!round) return
+  if (raceResult.value) {
+    try {
+      f1RaceData.value = await $fetch<any[]>(`/api/f1/race/${round}`)
+    }
+    catch { f1RaceData.value = [] }
+  }
+}, { immediate: true })
 
 watch(raceRound, async (round) => {
   if (!round) return
@@ -175,7 +271,11 @@ const filteredAvailableDrivers = computed(() => {
 })
 
 const { data: driverStandings } = useCachedFetch('/api/f1/standings/drivers')
-const sidebarTab = ref<'grid' | 'championship'>('grid')
+const sidebarTab = ref<'grid' | 'championship'>(hasQuali.value ? 'grid' : 'championship')
+
+watch(hasQuali, (has) => {
+  if (!has) sidebarTab.value = 'championship'
+})
 
 const teamColorMap: Record<string, string> = {
   mclaren: '#FF8000', ferrari: '#E8002D', red_bull: '#3671C6', mercedes: '#27F4D2',
@@ -315,12 +415,55 @@ const teamColorMap: Record<string, string> = {
             </div>
           </div>
 
+          <div v-if="isLocked && !myPrediction" class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
+            <UIcon name="i-lucide-circle-slash" class="size-8 mx-auto mb-2 text-zinc-600" />
+            <p class="font-bold text-sm mb-1">No prediction submitted</p>
+            <p class="text-xs text-zinc-500">You didn't submit a prediction for this race in this league.</p>
+          </div>
+
+          <div v-if="isLocked && !(race as any)?.result" class="mb-8 rounded-xl border border-yellow-900/30 bg-yellow-950/10 p-6 text-center">
+            <UIcon name="i-lucide-clock" class="size-8 mx-auto mb-2 text-yellow-500/60" />
+            <p class="font-bold text-sm mb-1">Waiting for race results</p>
+            <p class="text-xs text-zinc-500 mb-3">Results will appear here once the race is finished and data is imported.</p>
+            <UButton
+              v-if="isLeagueAdmin"
+              :to="`/leagues/${league?.slug}/settings`"
+              label="Import results"
+              icon="i-lucide-download"
+              variant="outline"
+              size="sm"
+            />
+          </div>
+
           <div v-if="isLocked && myPrediction" class="mb-8">
-            <h2 class="text-lg font-black uppercase tracking-tight mb-4">Your Prediction</h2>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-black uppercase tracking-tight">Your Prediction</h2>
+              <div v-if="predictionScoring" class="flex items-center gap-3">
+                <span class="text-sm text-zinc-500">{{ predictionScoring.exactHits }} exact</span>
+                <span class="font-black text-lg tabular-nums">{{ predictionScoring.total }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
+              </div>
+            </div>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div v-for="(driverId, index) in (myPrediction.positions as string[])" :key="driverId" class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/50 last:border-0">
+              <div
+                v-for="(driverId, index) in (myPrediction.positions as string[])"
+                :key="driverId"
+                class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/50 last:border-0"
+              >
                 <PositionBadge :position="index + 1" size="sm" />
-                <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" />
+                <div class="flex-1 min-w-0">
+                  <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" />
+                </div>
+                <template v-if="predictionScoring">
+                  <span
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded tabular-nums shrink-0"
+                    :class="scoringColor(predictionScoring.details[index]?.diff)"
+                  >
+                    {{ predictionScoring.details[index]?.actual ? `P${predictionScoring.details[index].actual}` : '—' }}
+                  </span>
+                  <span class="text-xs font-bold tabular-nums w-6 text-right shrink-0" :class="predictionScoring.details[index]?.points > 0 ? 'text-white' : 'text-zinc-600'">
+                    +{{ predictionScoring.details[index]?.points ?? 0 }}
+                  </span>
+                </template>
               </div>
             </div>
           </div>
@@ -328,9 +471,31 @@ const teamColorMap: Record<string, string> = {
           <div v-if="(race as any).result" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">Official Result</h2>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div v-for="(driverId, index) in ((race as any).result as string[])" :key="driverId" class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/50 last:border-0" :class="index < 3 ? 'bg-zinc-800/30' : ''">
+              <div
+                v-for="(driverId, index) in ((race as any).result as string[])"
+                :key="driverId"
+                class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/50 last:border-0"
+                :class="index < 3 ? 'bg-zinc-800/30' : ''"
+              >
                 <PositionBadge :position="index + 1" size="sm" />
-                <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" />
+                <div class="flex-1 min-w-0">
+                  <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" />
+                </div>
+                <template v-if="f1RaceData.length > 0">
+                  <span v-if="f1RaceData[index]?.time" class="text-xs text-zinc-500 tabular-nums hidden sm:inline">{{ f1RaceData[index].time }}</span>
+                  <span
+                    v-if="f1RaceData[index]?.status && f1RaceData[index].status !== 'Finished' && f1RaceData[index].status !== 'Lapped'"
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400"
+                  >
+                    {{ f1RaceData[index].status }}
+                  </span>
+                  <span
+                    v-else-if="f1RaceData[index]?.status === 'Lapped'"
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500"
+                  >
+                    Lapped
+                  </span>
+                </template>
               </div>
             </div>
           </div>
@@ -338,15 +503,38 @@ const teamColorMap: Record<string, string> = {
           <div v-if="(standings as any)?.standings" class="mb-8">
             <h2 class="text-lg font-black uppercase tracking-tight mb-4">Race Standings</h2>
             <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div v-for="(player, index) in (standings as any).standings" :key="player.userId" class="flex items-center gap-4 px-4 py-3 border-b border-zinc-800/50 last:border-0">
-                <PositionBadge :position="index + 1" size="sm" />
-                <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
-                <span class="flex-1 font-semibold">{{ player.userName }}</span>
-                <div class="flex items-center gap-4 text-sm">
-                  <span class="text-zinc-500">{{ player.exactHits }} exact</span>
-                  <span class="font-black text-lg tabular-nums">{{ player.total }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
+              <template v-for="(player, index) in (standings as any).standings" :key="player.userId">
+                <div
+                  class="flex items-center gap-4 px-4 py-3 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-800/30 transition-colors"
+                  @click="expandedStanding = expandedStanding === player.userId ? null : player.userId"
+                >
+                  <PositionBadge :position="index + 1" size="sm" />
+                  <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
+                  <span class="flex-1 font-semibold">{{ player.userName }}</span>
+                  <div class="flex items-center gap-4 text-sm">
+                    <span class="text-zinc-500">{{ player.exactHits }} exact</span>
+                    <span class="font-black text-lg tabular-nums">{{ player.total }}<span class="text-xs text-zinc-500 font-normal ml-0.5">pts</span></span>
+                    <UIcon :name="expandedStanding === player.userId ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3.5 text-zinc-600" />
+                  </div>
                 </div>
-              </div>
+                <div v-if="expandedStanding === player.userId && player.details" class="border-b border-zinc-800/50 bg-zinc-900/80 px-4 py-2">
+                  <div v-for="(detail, di) in player.details" :key="di" class="flex items-center gap-2 py-1">
+                    <span class="w-5 text-right text-xs font-bold text-zinc-500 tabular-nums">{{ detail.predicted }}</span>
+                    <div class="flex-1 min-w-0">
+                      <DriverBadge v-if="driverById(detail.driverId)" v-bind="driverById(detail.driverId)!" compact />
+                    </div>
+                    <span
+                      class="text-[10px] font-bold px-1 py-0.5 rounded tabular-nums shrink-0"
+                      :class="scoringColor(detail.actual !== null ? Math.abs(detail.predicted - detail.actual) : null)"
+                    >
+                      {{ detail.actual ? `P${detail.actual}` : '—' }}
+                    </span>
+                    <span class="text-[10px] font-bold tabular-nums w-5 text-right shrink-0" :class="detail.points > 0 ? 'text-white' : 'text-zinc-700'">
+                      +{{ detail.points }}
+                    </span>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -362,13 +550,31 @@ const teamColorMap: Record<string, string> = {
             </h2>
             <div class="grid gap-4" :class="(allPredictions as any[]).length > 1 ? 'sm:grid-cols-2' : ''">
               <div v-for="pred in (allPredictions as any[])" :key="pred.userId" class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div class="px-4 py-2.5 border-b border-zinc-800 bg-zinc-800/30 flex items-center gap-2">
-                  <UserAvatar :image="pred.userImage" :name="pred.userName" size="sm" />
-                  <span class="font-bold text-sm">{{ pred.userName }}</span>
+                <div class="px-4 py-2.5 border-b border-zinc-800 bg-zinc-800/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <UserAvatar :image="pred.userImage" :name="pred.userName" size="sm" />
+                    <span class="font-bold text-sm">{{ pred.userName }}</span>
+                  </div>
+                  <span v-if="raceResult && scorePrediction(pred.positions as string[])" class="font-black tabular-nums text-sm">
+                    {{ scorePrediction(pred.positions as string[])!.total }}<span class="text-[10px] text-zinc-500 font-normal ml-0.5">pts</span>
+                  </span>
                 </div>
                 <div v-for="(driverId, index) in (pred.positions as string[])" :key="driverId" class="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/20 last:border-0 text-sm">
                   <span class="w-5 text-right text-xs font-bold text-zinc-500 tabular-nums">{{ index + 1 }}</span>
-                  <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" compact />
+                  <div class="flex-1 min-w-0">
+                    <DriverBadge v-if="driverById(driverId)" v-bind="driverById(driverId)!" compact />
+                  </div>
+                  <template v-if="raceResult">
+                    <span
+                      class="text-[10px] font-bold px-1 py-0.5 rounded tabular-nums shrink-0"
+                      :class="scoringColor(scorePrediction(pred.positions as string[])?.details[index]?.diff ?? null)"
+                    >
+                      {{ scorePrediction(pred.positions as string[])?.details[index]?.actual ? `P${scorePrediction(pred.positions as string[])!.details[index].actual}` : '—' }}
+                    </span>
+                    <span class="text-[10px] font-bold tabular-nums w-5 text-right shrink-0" :class="(scorePrediction(pred.positions as string[])?.details[index]?.points ?? 0) > 0 ? 'text-white' : 'text-zinc-700'">
+                      +{{ scorePrediction(pred.positions as string[])?.details[index]?.points ?? 0 }}
+                    </span>
+                  </template>
                 </div>
               </div>
             </div>

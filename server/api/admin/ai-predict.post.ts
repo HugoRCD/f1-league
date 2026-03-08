@@ -12,6 +12,10 @@ export default defineEventHandler(async (event) => {
   if (!body.leagueId) throw createError({ statusCode: 400, message: 'leagueId is required' })
   log.set({ pitwall: { raceId: body.raceId, leagueId: body.leagueId } })
 
+  const [league] = await db.select().from(schema.league).where(eq(schema.league.id, body.leagueId)).limit(1)
+  if (!league) throw createError({ statusCode: 404, message: 'League not found' })
+  if (!league.pitwallEnabled) throw createError({ statusCode: 403, message: 'Pitwall is not enabled for this league.', why: 'A super admin must enable Pitwall for this league first', fix: 'Go to Super Admin > Leagues and enable Pitwall' })
+
   const [race] = await db.select().from(schema.race).where(eq(schema.race.id, body.raceId)).limit(1)
   if (!race) throw createError({ statusCode: 404, message: 'Race not found' })
   log.set({ pitwall: { raceName: race.name, raceLocation: race.location } })

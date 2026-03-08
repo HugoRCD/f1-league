@@ -1,0 +1,1 @@
+ALTER TABLE "league" ADD COLUMN "pitwallEnabled" boolean DEFAULT false NOT NULL;

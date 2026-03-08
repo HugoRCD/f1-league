@@ -103,14 +103,18 @@ const teamColorMap: Record<string, string> = {
         >
           <div class="h-1 bg-[#E10600]" />
           <div class="p-5">
-            <h3 class="font-black text-lg uppercase tracking-tight group-hover:text-[#E10600] transition-colors">{{ league.name }}</h3>
-            <p v-if="league.description" class="text-sm text-zinc-500 mt-1 line-clamp-2">{{ league.description }}</p>
-            <div class="flex items-center gap-3 mt-4 text-xs text-zinc-500">
-              <span class="flex items-center gap-1">
-                <UIcon name="i-lucide-users" class="size-3.5" />
-                {{ league.memberCount }} member{{ league.memberCount !== 1 ? 's' : '' }}
-              </span>
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-black text-lg uppercase tracking-tight group-hover:text-[#E10600] transition-colors">{{ league.name }}</h3>
               <UBadge v-if="league.role === 'admin'" color="warning" variant="subtle" size="xs">Admin</UBadge>
+            </div>
+            <p v-if="league.description" class="text-sm text-zinc-500 mt-1 line-clamp-2">{{ league.description }}</p>
+            <div class="flex items-center justify-between mt-4">
+              <UAvatarGroup v-if="league.members.length" size="xs" :max="5">
+                <UTooltip v-for="member in league.members" :key="member.userId" :text="member.name">
+                  <UAvatar :src="member.image || undefined" :alt="member.name" :icon="!member.name ? 'i-lucide-user' : undefined" />
+                </UTooltip>
+              </UAvatarGroup>
+              <span class="text-xs text-zinc-500">{{ league.memberCount }} member{{ league.memberCount !== 1 ? 's' : '' }}</span>
             </div>
           </div>
         </NuxtLink>

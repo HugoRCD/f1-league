@@ -1,3 +1,9 @@
+export interface LeagueMemberPreview {
+  userId: string
+  name: string
+  image: string | null
+}
+
 export interface League {
   id: string
   name: string
@@ -9,25 +15,55 @@ export interface League {
   role: string
   joinedAt: string
   memberCount: number
+  members: LeagueMemberPreview[]
 }
 
 export function useLeagues() {
-  return useCachedFetch<League[]>('/api/leagues', { key: 'leagues' })
+  return useFetch<League[]>('/api/leagues', { key: 'leagues' })
+}
+
+const lastLeagueSlug = import.meta.client ? useLocalStorage('f1-last-league', '') : ref('')
+
+export function useActiveLeagueSlug() {
+  return lastLeagueSlug
 }
 
 export function useCurrentLeague() {
   const route = useRoute()
-  const slug = computed(() => route.params.slug as string | undefined)
+  const routeSlug = computed(() => route.params.slug as string | undefined)
 
-  const { data: leagues } = useLeagues()
+  const { data: leagues, refresh } = useLeagues()
+
+  if (routeSlug.value) {
+    lastLeagueSlug.value = routeSlug.value
+  }
+
+  watch(routeSlug, (slug) => {
+    if (slug) lastLeagueSlug.value = slug
+  })
 
   const league = computed(() => {
-    if (!slug.value || !leagues.value) return null
-    return leagues.value.find(l => l.slug === slug.value) ?? null
+    if (!routeSlug.value || !leagues.value) return null
+    return leagues.value.find(l => l.slug === routeSlug.value) ?? null
   })
 
   const leagueId = computed(() => league.value?.id ?? null)
   const isLeagueAdmin = computed(() => league.value?.role === 'admin')
 
-  return { league, leagueId, slug, isLeagueAdmin }
+  return { league, leagueId, slug: routeSlug, isLeagueAdmin, refreshLeagues: refresh }
+}
+
+export function useLastLeague() {
+  const { data: leagues } = useLeagues()
+
+  const league = computed(() => {
+    if (!leagues.value?.length) return null
+    if (lastLeagueSlug.value) {
+      const found = leagues.value.find(l => l.slug === lastLeagueSlug.value)
+      if (found) return found
+    }
+    return leagues.value[0] ?? null
+  })
+
+  return league
 }

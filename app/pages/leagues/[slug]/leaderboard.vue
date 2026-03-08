@@ -5,9 +5,25 @@ const { user } = useUserSession()
 const title = computed(() => league.value ? `Standings — ${league.value.name}` : 'Standings')
 useSeoMeta({ title })
 
-const { data: leaderboard, status } = useFetch(() => `/api/leagues/${leagueId.value}/leaderboard`, {
-  watch: [leagueId],
-})
+const { data: leaderboard, status, refresh: refreshLeaderboard } = useFetch<any[]>(
+  () => `/api/leagues/${leagueId.value}/leaderboard`,
+  { immediate: false },
+)
+const { data: races } = useCachedFetch<any[]>('/api/races')
+
+const expandedPlayer = ref<string | null>(null)
+
+function toggleExpand(userId: string) {
+  expandedPlayer.value = expandedPlayer.value === userId ? null : userId
+}
+
+function raceName(raceId: string): string {
+  return races.value?.find((r: any) => r.id === raceId)?.name ?? raceId.slice(0, 8)
+}
+
+watch(leagueId, (id) => {
+  if (id) refreshLeaderboard()
+}, { immediate: true })
 </script>
 
 <template>
@@ -93,28 +109,50 @@ const { data: leaderboard, status } = useFetch(() => `/api/leagues/${leagueId.va
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(player, index) in (leaderboard as any[])"
-              :key="player.userId"
-              class="border-b border-zinc-800/50 last:border-0 transition-colors"
-              :class="player.userId === user?.id ? 'bg-[#E10600]/5' : ''"
-            >
-              <td class="px-4 py-3">
-                <PositionBadge :position="index + 1" size="sm" />
-              </td>
-              <td class="py-3">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="shrink-0 ring-1 ring-zinc-700 rounded-full">
-                    <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
+            <template v-for="(player, index) in leaderboard" :key="player.userId">
+              <tr
+                class="border-b border-zinc-800/50 transition-colors cursor-pointer hover:bg-zinc-800/30"
+                :class="player.userId === user?.id ? 'bg-[#E10600]/5' : ''"
+                @click="toggleExpand(player.userId)"
+              >
+                <td class="px-4 py-3">
+                  <PositionBadge :position="index + 1" size="sm" />
+                </td>
+                <td class="py-3">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="shrink-0 ring-1 ring-zinc-700 rounded-full">
+                      <UserAvatar :image="player.userImage" :name="player.userName" size="sm" />
+                    </div>
+                    <span class="font-semibold truncate" :class="player.userId === user?.id ? 'text-[#E10600]' : ''">{{ player.userName }}</span>
+                    <span v-if="player.userId === user?.id" class="text-[10px] text-[#E10600] font-bold uppercase">you</span>
                   </div>
-                  <span class="font-semibold truncate" :class="player.userId === user?.id ? 'text-[#E10600]' : ''">{{ player.userName }}</span>
-                  <span v-if="player.userId === user?.id" class="text-[10px] text-[#E10600] font-bold uppercase">you</span>
-                </div>
-              </td>
-              <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.raceWins }}</td>
-              <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.totalExactHits }}</td>
-              <td class="text-right px-4 py-3 font-black text-lg tabular-nums">{{ player.totalPoints }}</td>
-            </tr>
+                </td>
+                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.raceWins }}</td>
+                <td class="text-right px-3 py-3 text-sm text-zinc-400 tabular-nums hidden sm:table-cell">{{ player.totalExactHits }}</td>
+                <td class="text-right px-4 py-3">
+                  <div class="flex items-center justify-end gap-2">
+                    <span class="font-black text-lg tabular-nums">{{ player.totalPoints }}</span>
+                    <UIcon :name="expandedPlayer === player.userId ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3.5 text-zinc-600" />
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="expandedPlayer === player.userId" class="border-b border-zinc-800/50">
+                <td colspan="5" class="px-4 py-3 bg-zinc-900/80">
+                  <div class="flex flex-wrap gap-2">
+                    <NuxtLink
+                      v-for="rr in player.raceResults"
+                      :key="rr.raceId"
+                      :to="`/leagues/${league?.slug}/races/${rr.raceId}`"
+                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 transition-colors"
+                    >
+                      <span class="text-xs text-zinc-500 truncate max-w-24">{{ raceName(rr.raceId) }}</span>
+                      <span class="text-xs font-bold tabular-nums" :class="rr.exactHits > 0 ? 'text-emerald-400' : 'text-zinc-400'">{{ rr.exactHits }}E</span>
+                      <span class="text-sm font-black tabular-nums">{{ rr.total }}<span class="text-[10px] text-zinc-500 font-normal">pts</span></span>
+                    </NuxtLink>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>

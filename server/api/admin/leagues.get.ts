@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
       name: schema.league.name,
       slug: schema.league.slug,
       season: schema.league.season,
+      pitwallEnabled: schema.league.pitwallEnabled,
       createdAt: schema.league.createdAt,
       createdBy: schema.league.createdBy,
       creatorName: schema.user.name,

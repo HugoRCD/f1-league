@@ -34,12 +34,16 @@ export default defineTask({
     const pitwallMemberships = await db
       .select({ leagueId: schema.leagueMember.leagueId })
       .from(schema.leagueMember)
-      .where(eq(schema.leagueMember.userId, botUser.id))
+      .innerJoin(schema.league, eq(schema.leagueMember.leagueId, schema.league.id))
+      .where(and(
+        eq(schema.leagueMember.userId, botUser.id),
+        eq(schema.league.pitwallEnabled, true),
+      ))
 
     if (pitwallMemberships.length === 0) {
-      log.set({ result: 'Pitwall is not a member of any league' })
+      log.set({ result: 'Pitwall has no enabled leagues' })
       log.emit()
-      return { result: 'Pitwall is not a member of any league' }
+      return { result: 'Pitwall has no enabled leagues' }
     }
 
     let predicted = 0

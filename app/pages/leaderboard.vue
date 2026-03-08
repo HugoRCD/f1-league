@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { data: leagues } = useLeagues()
+const lastLeague = useLastLeague()
 
-watch(leagues, (l) => {
-  if (l?.length && l[0]) {
-    navigateTo(`/leagues/${l[0].slug}/leaderboard`, { replace: true })
+watch(lastLeague, (l) => {
+  if (l) {
+    navigateTo(`/leagues/${l.slug}/leaderboard`, { replace: true })
   }
 }, { immediate: true })
 </script>

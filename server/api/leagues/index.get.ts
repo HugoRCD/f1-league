@@ -28,19 +28,27 @@ export default defineEventHandler(async (event) => {
   const leagueIds = memberships.map(m => m.leagueId)
 
   const allMembers = await db
-    .select({ leagueId: schema.leagueMember.leagueId })
+    .select({
+      leagueId: schema.leagueMember.leagueId,
+      userId: schema.leagueMember.userId,
+      userName: schema.user.name,
+      userImage: schema.user.image,
+    })
     .from(schema.leagueMember)
+    .innerJoin(schema.user, eq(schema.leagueMember.userId, schema.user.id))
     .where(inArray(schema.leagueMember.leagueId, leagueIds))
 
-  const countMap = new Map<string, number>()
+  const membersByLeague = new Map<string, { userId: string, name: string, image: string | null }[]>()
   for (const m of allMembers) {
-    countMap.set(m.leagueId, (countMap.get(m.leagueId) ?? 0) + 1)
+    if (!membersByLeague.has(m.leagueId)) membersByLeague.set(m.leagueId, [])
+    membersByLeague.get(m.leagueId)!.push({ userId: m.userId, name: m.userName, image: m.userImage })
   }
 
   return memberships.map(m => ({
     ...m.league,
     role: m.role,
     joinedAt: m.joinedAt,
-    memberCount: countMap.get(m.leagueId) ?? 0,
+    memberCount: membersByLeague.get(m.leagueId)?.length ?? 0,
+    members: membersByLeague.get(m.leagueId) ?? [],
   }))
 })

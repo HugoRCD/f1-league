@@ -49,6 +49,7 @@ export const league = pgTable('league', {
     lockMinutesBefore: number
     openDaysBefore: number
   } | null>(),
+  pitwallEnabled: boolean('pitwallEnabled').notNull().default(false),
   createdBy: text('createdBy').notNull().references(() => authUser.id, { onDelete: 'cascade' }),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull(),

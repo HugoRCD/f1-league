@@ -1,26 +1,42 @@
 <script setup lang="ts">
+import { z } from 'zod'
+
 useSeoMeta({ title: 'Create a League — F1 League' })
 
-const name = ref('')
-const description = ref('')
+const toast = useToast()
+const { refresh: refreshLeagues } = useLeagues()
 const loading = ref(false)
 const error = ref('')
 
-async function createLeague() {
-  if (!name.value.trim()) return
+const schema = z.object({
+  name: z.string().min(2, 'At least 2 characters').max(50, '50 characters max'),
+  description: z.string().optional(),
+})
+
+type Schema = z.output<typeof schema>
+const state = reactive<Partial<Schema>>({ name: '', description: '' })
+
+async function onSubmit() {
   loading.value = true
   error.value = ''
 
   try {
     const league = await $fetch<{ slug: string }>('/api/leagues', {
       method: 'POST',
-      body: { name: name.value, description: description.value || undefined },
+      body: { name: state.name, description: state.description || undefined },
     })
-    await refreshNuxtData('leagues')
+    await refreshLeagues()
+    toast.add({ title: 'League created!', color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${league.slug}`)
   }
   catch (e: any) {
-    error.value = e.data?.message || 'Failed to create league'
+    const message = e.data?.message || 'Something went wrong. Please try again.'
+    error.value = message
+    if (e.statusCode === 401 || e.data?.statusCode === 401) {
+      toast.add({ title: 'Session expired', description: 'Please sign in again.', color: 'error', icon: 'i-lucide-log-out' })
+      navigateTo('/login')
+      return
+    }
   }
   finally {
     loading.value = false
@@ -39,28 +55,32 @@ async function createLeague() {
       Create a League
     </h1>
 
-    <form class="flex flex-col gap-5" @submit.prevent="createLeague">
-      <UFormField label="League name" required>
-        <UInput v-model="name" placeholder="e.g. The Pit Lane Gang" size="lg" class="w-full" autofocus />
+    <UForm :schema="schema" :state="state" class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+      <UFormField name="name" label="League name" required>
+        <UInput v-model="state.name" placeholder="e.g. The Pit Lane Gang" size="lg" class="w-full" autofocus />
       </UFormField>
 
-      <UFormField label="Description" hint="Optional">
-        <UTextarea v-model="description" placeholder="What's this league about?" :rows="3" class="w-full" />
+      <UFormField name="description" label="Description" hint="Optional">
+        <UTextarea v-model="state.description" placeholder="What's this league about?" :rows="3" class="w-full" />
       </UFormField>
 
-      <p v-if="error" class="text-sm text-red-400">
-        {{ error }}
-      </p>
+      <UAlert
+        v-if="error"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-alert-circle"
+        :title="error"
+        :close-button="{ onClick: () => error = '' }"
+      />
 
       <UButton
         type="submit"
         label="Create League"
         size="lg"
         :loading="loading"
-        :disabled="!name.trim()"
         class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
         block
       />
-    </form>
+    </UForm>
   </UContainer>
 </template>

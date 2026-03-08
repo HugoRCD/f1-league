@@ -1,5 +1,15 @@
 <script setup lang="ts">
-const { league, leagueId } = useCurrentLeague()
+const { league, leagueId, isLeagueAdmin, refreshLeagues } = useCurrentLeague()
+
+const leagueNotFound = ref(false)
+
+watch(league, async (val) => {
+  if (!val && !leagueNotFound.value) {
+    await refreshLeagues()
+    await nextTick()
+    if (!league.value) leagueNotFound.value = true
+  }
+}, { immediate: true })
 
 const title = computed(() => league.value?.name ? `${league.value.name} — F1 League` : 'League — F1 League')
 useSeoMeta({ title })
@@ -17,10 +27,14 @@ interface Race {
 }
 
 const { data: races, status: racesStatus } = useCachedFetch<Race[]>('/api/races')
-const { data: leaderboard, status: leaderboardStatus } = useFetch<any[]>(() => leagueId.value ? `/api/leagues/${leagueId.value}/leaderboard` : '', {
-  immediate: false,
-  watch: [leagueId],
-})
+const { data: leaderboard, status: leaderboardStatus, refresh: refreshLeaderboard } = useFetch<any[]>(
+  () => `/api/leagues/${leagueId.value}/leaderboard`,
+  { immediate: false },
+)
+
+watch(leagueId, (id) => {
+  if (id) refreshLeaderboard()
+}, { immediate: true })
 
 const nextRace = computed(() => {
   if (!races.value) return null
@@ -38,11 +52,16 @@ const totalRaces = computed(() => races.value?.length ?? 0)
 
 <template>
   <UContainer class="py-8">
-    <div v-if="!league" class="py-16 text-center">
+    <div v-if="leagueNotFound" class="py-16 text-center">
+      <UIcon name="i-lucide-search-x" class="size-12 mx-auto mb-4 text-zinc-700" />
+      <p class="text-xl font-bold mb-2">League not found</p>
+      <p class="text-zinc-400 mb-6">This league doesn't exist or you don't have access to it.</p>
+      <UButton to="/" label="Back to home" variant="outline" />
+    </div>
+
+    <div v-else-if="!league" class="py-16 text-center">
       <UIcon name="i-lucide-loader" class="size-8 animate-spin text-zinc-600 mx-auto mb-4" />
-      <p class="text-zinc-500">
-        Loading league...
-      </p>
+      <p class="text-zinc-500">Loading league...</p>
     </div>
 
     <template v-else>
@@ -58,13 +77,15 @@ const totalRaces = computed(() => races.value?.length ?? 0)
             {{ league.memberCount }} member{{ league.memberCount !== 1 ? 's' : '' }}
           </p>
         </div>
-        <div v-if="totalRaces" class="text-right hidden sm:block">
-          <p class="text-2xl font-black tabular-nums">
-            {{ completedCount }}<span class="text-zinc-600">/{{ totalRaces }}</span>
-          </p>
-          <p class="text-xs text-zinc-500">
-            races completed
-          </p>
+        <div class="flex items-center gap-4">
+          <div v-if="totalRaces" class="text-right hidden sm:block">
+            <p class="text-2xl font-black tabular-nums">
+              {{ completedCount }}<span class="text-zinc-600">/{{ totalRaces }}</span>
+            </p>
+            <p class="text-xs text-zinc-500">
+              races completed
+            </p>
+          </div>
         </div>
       </div>
 

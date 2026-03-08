@@ -9,12 +9,50 @@ const { data: races, refresh: refreshRaces } = useFetch('/api/races')
 const { data: drivers, refresh: refreshDrivers } = useFetch('/api/drivers')
 const { data: stats, refresh: refreshStats } = useFetch('/api/admin/stats')
 const { data: users, refresh: refreshUsers } = useFetch('/api/admin/users')
+const { data: adminLeagues, refresh: refreshAdminLeagues } = useFetch('/api/admin/leagues')
 
 const activeDrivers = computed(() => drivers.value?.filter(d => d.active) ?? [])
 
+const ITEMS_PER_PAGE = 10
+
+const leagueSearch = ref('')
+const leaguePage = ref(1)
+const filteredLeagues = computed(() => {
+  if (!adminLeagues.value) return []
+  const q = leagueSearch.value.toLowerCase()
+  if (!q) return adminLeagues.value as any[]
+  return (adminLeagues.value as any[]).filter((l: any) =>
+    l.name.toLowerCase().includes(q)
+    || l.slug.toLowerCase().includes(q)
+    || l.creatorName?.toLowerCase().includes(q),
+  )
+})
+const paginatedLeagues = computed(() => {
+  const start = (leaguePage.value - 1) * ITEMS_PER_PAGE
+  return filteredLeagues.value.slice(start, start + ITEMS_PER_PAGE)
+})
+watch(leagueSearch, () => { leaguePage.value = 1 })
+
+const userSearch = ref('')
+const userPage = ref(1)
+const filteredUsers = computed(() => {
+  if (!users.value) return []
+  const q = userSearch.value.toLowerCase()
+  if (!q) return users.value as any[]
+  return (users.value as any[]).filter((u: any) =>
+    u.name?.toLowerCase().includes(q)
+    || u.email?.toLowerCase().includes(q),
+  )
+})
+const paginatedUsers = computed(() => {
+  const start = (userPage.value - 1) * ITEMS_PER_PAGE
+  return filteredUsers.value.slice(start, start + ITEMS_PER_PAGE)
+})
+watch(userSearch, () => { userPage.value = 1 })
+
 async function refreshAll() {
   clearNuxtData()
-  await Promise.all([refreshRaces(), refreshDrivers(), refreshStats(), refreshUsers()])
+  await Promise.all([refreshRaces(), refreshDrivers(), refreshStats(), refreshUsers(), refreshAdminLeagues()])
 }
 
 
@@ -35,35 +73,48 @@ async function seedData() {
 
 const simulating = ref(false)
 const simulateRaces = ref(5)
+const simulateLeagueId = ref('')
+const leagueOptions = computed(() => [
+  { label: 'New simulation league', value: '' },
+  ...(adminLeagues.value ?? []).map((l: any) => ({ label: l.name, value: l.id })),
+])
+
 async function simulateChampionship() {
   simulating.value = true
   try {
-    const result = await $fetch('/api/admin/simulate', { method: 'POST', body: { racesToSimulate: simulateRaces.value } })
-    toast.add({ title: 'Simulation complete', description: `${result.users} players, ${result.races} races, ${result.predictions} predictions`, color: 'success', icon: 'i-lucide-check' })
+    const result = await $fetch('/api/admin/simulate', {
+      method: 'POST',
+      body: {
+        racesToSimulate: simulateRaces.value,
+        leagueId: simulateLeagueId.value || undefined,
+      },
+    })
+    toast.add({
+      title: 'Simulation complete',
+      description: `${result.users} players, ${result.races} races, ${result.predictions} predictions in "${result.leagueSlug}"`,
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
     await refreshAll()
-  } catch (e: any) {
+  }
+  catch (e: any) {
     toast.add({ title: 'Simulation failed', description: e?.data?.message, color: 'error' })
-  } finally {
+  }
+  finally {
     simulating.value = false
   }
 }
 
 
-const aiRaceId = ref('')
-const aiPredicting = ref(false)
-async function runAiPrediction() {
-  if (!aiRaceId.value) return
-  aiPredicting.value = true
+
+async function togglePitwall(leagueId: string, enabled: boolean) {
   try {
-    const result = await $fetch('/api/admin/ai-predict', { method: 'POST', body: { raceId: aiRaceId.value } })
-    toast.add({ title: 'Pitwall has spoken', description: result.driverNames.slice(0, 5).join(' → ') + ' ...', color: 'success', icon: 'i-lucide-bot' })
-    await refreshAll()
+    await $fetch('/api/admin/leagues', { method: 'POST', body: { leagueId, pitwallEnabled: enabled } })
+    toast.add({ title: `Pitwall ${enabled ? 'enabled' : 'disabled'}`, color: 'success', icon: 'i-lucide-bot' })
+    await refreshAdminLeagues()
   }
   catch (e: any) {
-    toast.add({ title: 'AI prediction failed', description: e?.data?.message, color: 'error' })
-  }
-  finally {
-    aiPredicting.value = false
+    toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
   }
 }
 
@@ -401,13 +452,101 @@ async function handleImportFile(e: Event) {
   }
 }
 
+const autoImporting = ref(false)
+const autoImportResult = ref<{ imported: number, skipped: number, errors?: string[] } | null>(null)
+
+async function autoImportResults() {
+  autoImporting.value = true
+  autoImportResult.value = null
+  try {
+    const result = await $fetch<{ imported: number, skipped: number, errors?: string[] }>('/api/admin/results/auto-import', { method: 'POST' })
+    autoImportResult.value = result
+    if (result.imported > 0) {
+      toast.add({ title: `${result.imported} result(s) imported`, color: 'success', icon: 'i-lucide-check' })
+      await refreshAll()
+    }
+    else {
+      toast.add({ title: 'No new results to import', description: 'All completed races already have results, or the F1 API has no data yet', color: 'neutral', icon: 'i-lucide-info' })
+    }
+  }
+  catch (e: any) {
+    toast.add({ title: 'Auto-import failed', description: e?.data?.message, color: 'error' })
+  }
+  finally {
+    autoImporting.value = false
+  }
+}
+
+const selectedResultRaceId = ref('')
+const resultPositions = ref<(string | null)[]>(Array.from({ length: 10 }, () => null))
+const savingResult = ref(false)
+const importingResult = ref(false)
+
+watch(selectedResultRaceId, async (raceId) => {
+  if (!raceId) return
+  resultPositions.value = Array.from({ length: 10 }, () => null)
+  try {
+    const race = await $fetch<any>(`/api/races/${raceId}`)
+    if (race.result) resultPositions.value = [...(race.result as string[])]
+  }
+  catch {}
+})
+
+function availableDriversForResult(posIndex: number) {
+  const selected = new Set(resultPositions.value.filter((id, i) => id && i !== posIndex))
+  return activeDrivers.value.filter((d: any) => !selected.has(d.id))
+}
+
+async function submitResult() {
+  if (!selectedResultRaceId.value || resultPositions.value.some(p => !p)) return
+  savingResult.value = true
+  try {
+    await $fetch('/api/admin/results', { method: 'POST', body: { raceId: selectedResultRaceId.value, positions: resultPositions.value } })
+    toast.add({ title: 'Result saved', color: 'success', icon: 'i-lucide-check' })
+    await refreshAll()
+  }
+  catch (e: any) {
+    toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
+  }
+  finally {
+    savingResult.value = false
+  }
+}
+
+const selectedResultRound = computed(() => {
+  if (!selectedResultRaceId.value || !races.value) return null
+  const index = (races.value as any[]).findIndex((r: any) => r.id === selectedResultRaceId.value)
+  return index >= 0 ? index + 1 : null
+})
+
+async function importResultFromApi() {
+  if (!selectedResultRound.value) return
+  importingResult.value = true
+  try {
+    const result = await $fetch<any>('/api/admin/results/import', { method: 'POST', body: { round: selectedResultRound.value } })
+    if (result.unmatchedCount > 0) {
+      toast.add({ title: 'Partial import', description: `${result.unmatchedCount} driver(s) could not be matched`, color: 'warning' })
+    }
+    else {
+      toast.add({ title: 'Results imported', description: 'Review and save below', color: 'success', icon: 'i-lucide-check' })
+    }
+    resultPositions.value = result.positions as (string | null)[]
+  }
+  catch (e: any) {
+    toast.add({ title: 'Import failed', description: e?.data?.message || 'No results available yet', color: 'error' })
+  }
+  finally {
+    importingResult.value = false
+  }
+}
+
 const tabs = [
   { label: 'Seed & Test', value: 'seed', slot: 'seed', icon: 'i-lucide-database' },
-  { label: 'Users', value: 'users', slot: 'users', icon: 'i-lucide-users' },
   { label: 'Results', value: 'results', slot: 'results', icon: 'i-lucide-flag-triangle-right' },
+  { label: 'Leagues', value: 'leagues', slot: 'leagues', icon: 'i-lucide-trophy' },
+  { label: 'Users', value: 'users', slot: 'users', icon: 'i-lucide-users' },
   { label: 'Drivers', value: 'drivers', slot: 'drivers', icon: 'i-lucide-car' },
   { label: 'Races', value: 'races', slot: 'races', icon: 'i-lucide-calendar' },
-  { label: 'Scoring', value: 'scoring', slot: 'scoring', icon: 'i-lucide-settings' },
 ]
 </script>
 
@@ -422,8 +561,8 @@ const tabs = [
       </h1>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
-      <div v-for="(stat, key) in { Teams: stats?.teams, Drivers: stats?.drivers, Races: stats?.races, Results: stats?.results, Predictions: stats?.predictions }" :key class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 text-center">
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-8">
+      <div v-for="(stat, key) in { Leagues: stats?.leagues, Teams: stats?.teams, Drivers: stats?.drivers, Races: stats?.races, Results: stats?.results, Predictions: stats?.predictions }" :key class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 text-center">
         <p class="text-2xl font-black tabular-nums">
           {{ stat ?? 0 }}
         </p>
@@ -434,7 +573,7 @@ const tabs = [
     </div>
 
     <ClientOnly>
-      <UTabs v-model="tab" :items="tabs">
+      <UTabs v-model="tab" :items="tabs" variant="link" color="neutral" size="sm">
         <template #seed>
           <div class="py-6 flex flex-col gap-6">
             <div>
@@ -460,10 +599,18 @@ const tabs = [
                   <UIcon name="i-lucide-flask-conical" class="size-4 text-yellow-500 shrink-0" />
                   <div>
                     <p class="font-bold text-sm">Simulate a championship</p>
-                    <p class="text-xs text-zinc-500">Creates 5 test players (Alice, Bob, Charlie, Diana, Eve) with random predictions, and generates random official results. Use this to verify scoring, standings, and leaderboard work correctly before the real season.</p>
+                    <p class="text-xs text-zinc-500">Creates 5 test players with random predictions and results. You can inject them into an existing league to test standings, scoring and leaderboard.</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-3 mt-3 pl-7">
+                <div class="flex items-center gap-3 mt-3 pl-7 flex-wrap">
+                  <USelectMenu
+                    v-model="simulateLeagueId"
+                    :items="leagueOptions"
+                    value-key="value"
+                    placeholder="Target league..."
+                    size="sm"
+                    class="w-48"
+                  />
                   <USelectMenu
                     v-model="simulateRaces"
                     :items="Array.from({ length: 24 }, (_, i) => ({ label: `${i + 1} race${i > 0 ? 's' : ''}`, value: i + 1 }))"
@@ -472,30 +619,6 @@ const tabs = [
                     class="w-32"
                   />
                   <UButton label="Run simulation" icon="i-lucide-play" :loading="simulating" size="sm" @click="simulateChampionship" />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Pitwall</h3>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-                <div class="flex items-center gap-3 mb-2">
-                  <UIcon name="i-lucide-bot" class="size-4 text-violet-400 shrink-0" />
-                  <div>
-                    <p class="font-bold text-sm">Pitwall — AI Competitor</p>
-                    <p class="text-xs text-zinc-500">Your AI rival. Pitwall analyzes the starting grid, championship standings, and recent form to make its own Top 10 prediction. It plays as a regular competitor — can your friends beat the machine?</p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-3 mt-3 pl-7">
-                  <USelectMenu
-                    v-model="aiRaceId"
-                    :items="(races ?? []).map(r => ({ label: r.name, value: r.id }))"
-                    value-key="value"
-                    placeholder="Select race..."
-                    size="sm"
-                    class="w-52"
-                  />
-                  <UButton label="Let Pitwall predict" icon="i-lucide-bot" :loading="aiPredicting" :disabled="!aiRaceId" size="sm" @click="runAiPrediction" />
                 </div>
               </div>
             </div>
@@ -528,10 +651,148 @@ const tabs = [
           </div>
         </template>
 
+        <template #results>
+          <div class="py-6 flex flex-col gap-6 max-w-xl">
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Auto-import</h3>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <UIcon name="i-lucide-cloud-download" class="size-4 text-[#E10600] shrink-0" />
+                    <div class="min-w-0">
+                      <p class="font-bold text-sm">Import all missing results</p>
+                      <p class="text-xs text-zinc-500">Fetches results from the F1 API for all completed races. Also runs automatically every hour via cron.</p>
+                    </div>
+                  </div>
+                  <UButton label="Import" icon="i-lucide-download" :loading="autoImporting" size="sm" class="shrink-0" @click="autoImportResults" />
+                </div>
+                <div v-if="autoImportResult" class="mt-3 ml-7 flex flex-wrap gap-3 text-xs">
+                  <span class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-green-500" />
+                    {{ autoImportResult.imported }} imported
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-zinc-500" />
+                    {{ autoImportResult.skipped }} skipped
+                  </span>
+                  <span v-if="autoImportResult.errors?.length" class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-full bg-red-500" />
+                    {{ autoImportResult.errors.length }} error(s)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Manual entry</h3>
+              <div class="flex items-center gap-3 mb-4">
+                <USelectMenu
+                  v-model="selectedResultRaceId"
+                  :items="(races ?? []).map((r: any) => ({ label: r.name + (r.hasResult ? ' ✓' : ''), value: r.id }))"
+                  value-key="value"
+                  placeholder="Select a race..."
+                  class="flex-1"
+                  size="sm"
+                />
+                <UButton
+                  v-if="selectedResultRound"
+                  label="Import from F1 API"
+                  icon="i-lucide-download"
+                  size="sm"
+                  variant="outline"
+                  :loading="importingResult"
+                  @click="importResultFromApi"
+                />
+              </div>
+
+              <div v-if="selectedResultRaceId" class="flex flex-col gap-2 mb-4">
+                <div v-for="(_, i) in 10" :key="i" class="flex items-center gap-3">
+                  <span class="w-6 text-right text-xs font-black tabular-nums text-zinc-500">{{ i + 1 }}</span>
+                  <USelectMenu
+                    v-model="resultPositions[i]"
+                    :items="availableDriversForResult(i).map((d: any) => ({ label: `#${d.number} ${d.firstName} ${d.lastName}`, value: d.id }))"
+                    value-key="value"
+                    placeholder="Select driver..."
+                    size="sm"
+                    class="flex-1"
+                  />
+                </div>
+              </div>
+
+              <UButton
+                v-if="selectedResultRaceId"
+                label="Save result"
+                icon="i-lucide-check"
+                :loading="savingResult"
+                :disabled="resultPositions.some(p => !p)"
+                @click="submitResult"
+              />
+            </div>
+          </div>
+        </template>
+
+        <template #leagues>
+          <div class="py-6">
+            <div class="flex items-center justify-between mb-4 gap-4">
+              <h2 class="text-lg font-black uppercase tracking-tight">All Leagues</h2>
+              <div class="flex items-center gap-3">
+                <UInput v-model="leagueSearch" placeholder="Search leagues..." icon="i-lucide-search" size="sm" class="w-52" />
+                <UBadge v-if="adminLeagues" color="neutral" variant="subtle">{{ filteredLeagues.length }}</UBadge>
+              </div>
+            </div>
+
+            <div v-if="!filteredLeagues.length" class="text-center py-12 text-zinc-500">
+              <UIcon name="i-lucide-trophy" class="size-10 mx-auto mb-3 text-zinc-700" />
+              <p>{{ leagueSearch ? 'No leagues match your search.' : 'No leagues created yet.' }}</p>
+            </div>
+
+            <div v-else class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                    <th class="text-left px-4 py-2.5">Name</th>
+                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">Slug</th>
+                    <th class="text-right px-3 py-2.5 w-20">Members</th>
+                    <th class="text-left px-3 py-2.5 hidden sm:table-cell">Created by</th>
+                    <th class="text-center px-3 py-2.5 w-20">Pitwall</th>
+                    <th class="text-left px-4 py-2.5 w-28">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="league in paginatedLeagues"
+                    :key="league.id"
+                    class="border-b border-zinc-800/50 last:border-0"
+                  >
+                    <td class="px-4 py-3 font-semibold">{{ league.name }}</td>
+                    <td class="px-3 py-3 text-sm text-zinc-500 font-mono hidden sm:table-cell">{{ league.slug }}</td>
+                    <td class="px-3 py-3 text-right tabular-nums text-sm">{{ league.memberCount }}</td>
+                    <td class="px-3 py-3 text-sm text-zinc-400 hidden sm:table-cell">{{ league.creatorName }}</td>
+                    <td class="px-3 py-3 text-center">
+                      <USwitch :model-value="league.pitwallEnabled" @update:model-value="togglePitwall(league.id, $event)" />
+                    </td>
+                    <td class="px-4 py-3 text-xs text-zinc-500">{{ new Date(league.createdAt).toLocaleDateString() }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-if="filteredLeagues.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
+              <UPagination v-model:page="leaguePage" :total="filteredLeagues.length" :items-per-page="ITEMS_PER_PAGE" size="sm" />
+            </div>
+          </div>
+        </template>
+
         <template #users>
-          <div class="py-6 flex flex-col gap-2">
+          <div class="py-6">
+            <div class="flex items-center justify-between mb-4 gap-4">
+              <UBadge color="neutral" variant="subtle">{{ filteredUsers.length }} user{{ filteredUsers.length !== 1 ? 's' : '' }}</UBadge>
+              <UInput v-model="userSearch" placeholder="Search users..." icon="i-lucide-search" size="sm" class="w-52" />
+            </div>
+
+            <div class="flex flex-col gap-2">
             <div
-              v-for="u in users"
+              v-for="u in paginatedUsers"
               :key="u.id"
               class="rounded-xl border bg-zinc-900/50 p-4"
               :class="u.id === currentUser?.id ? 'border-primary/30' : 'border-zinc-800'"
@@ -600,113 +861,14 @@ const tabs = [
             <div v-if="!users?.length" class="p-8 text-center text-zinc-500 rounded-xl border border-zinc-800 bg-zinc-900/50">
               No users yet.
             </div>
+
+            <div v-if="filteredUsers.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
+              <UPagination v-model:page="userPage" :total="filteredUsers.length" :items-per-page="ITEMS_PER_PAGE" size="sm" />
+            </div>
+            </div>
           </div>
         </template>
 
-        <template #results>
-          <div class="py-6 flex flex-col gap-6 max-w-xl">
-            <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
-                Auto-import
-              </h3>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <UIcon name="i-lucide-cloud-download" class="size-4 text-f1-600 shrink-0" />
-                    <div class="min-w-0">
-                      <p class="font-bold text-sm">
-                        Import all missing results
-                      </p>
-                      <p class="text-xs text-zinc-500">
-                        Fetches results from the F1 API for all completed races that don't have results yet. Also runs automatically every hour.
-                      </p>
-                    </div>
-                  </div>
-                  <UButton
-                    label="Import"
-                    icon="i-lucide-download"
-                    :loading="autoImporting"
-                    size="sm"
-                    class="shrink-0"
-                    @click="autoImportResults"
-                  />
-                </div>
-                <div v-if="autoImportResult" class="mt-3 ml-7 flex flex-wrap gap-3 text-xs">
-                  <span class="flex items-center gap-1.5">
-                    <span class="size-2 rounded-full bg-green-500" />
-                    {{ autoImportResult.imported }} imported
-                  </span>
-                  <span class="flex items-center gap-1.5">
-                    <span class="size-2 rounded-full bg-zinc-500" />
-                    {{ autoImportResult.skipped }} skipped
-                  </span>
-                  <span v-if="autoImportResult.errors?.length" class="flex items-center gap-1.5">
-                    <span class="size-2 rounded-full bg-red-500" />
-                    {{ autoImportResult.errors.length }} error(s)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h2 class="text-lg font-black uppercase tracking-tight mb-4">
-                Enter Race Results
-              </h2>
-              <USelectMenu
-                v-model="selectedRaceId"
-                :items="(races ?? []).map(r => ({ label: r.name + (r.hasResult ? ' ✓' : ''), value: r.id }))"
-                value-key="value"
-                placeholder="Select a race..."
-                class="max-w-md"
-              />
-            </div>
-            <div v-if="selectedRaceId" class="flex flex-col gap-2">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">
-                  Official Top 10
-                </p>
-                <UButton
-                  label="Import from F1 API"
-                  icon="i-lucide-download"
-                  size="xs"
-                  variant="outline"
-                  :loading="importing"
-                  :disabled="!selectedRound"
-                  @click="importFromApi"
-                />
-              </div>
-              <div v-for="(pos, index) in resultPositions" :key="index" class="flex items-center gap-2">
-                <PositionBadge :position="index + 1" size="sm" />
-                <div class="flex-1">
-                  <template v-if="pos && activeDrivers.find(d => d.id === pos)">
-                    <div class="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2">
-                      <DriverBadge v-bind="activeDrivers.find(d => d.id === pos)!" compact />
-                      <UButton icon="i-lucide-x" variant="ghost" color="neutral" size="xs" @click="resultPositions[index] = null" />
-                    </div>
-                  </template>
-                  <USelectMenu
-                    v-else
-                    :model-value="pos ?? undefined"
-                    :items="availableDriversForResult(index).map(d => ({ label: `#${d.number} ${d.firstName} ${d.lastName}`, value: d.id }))"
-                    value-key="value"
-                    placeholder="Select driver..."
-                    class="w-full"
-                    @update:model-value="resultPositions[index] = $event"
-                  />
-                </div>
-              </div>
-              <UButton
-                label="Save result"
-                icon="i-lucide-save"
-                :disabled="resultPositions.some(p => !p)"
-                :loading="savingResult"
-                size="lg"
-                class="mt-4 self-start font-bold"
-                @click="submitResult"
-              />
-            </div>
-          </div>
-        </template>
 
         <template #drivers>
           <div class="py-6 flex flex-col gap-8">
@@ -830,157 +992,6 @@ const tabs = [
               </div>
               <div v-if="!races?.length" class="p-8 text-center text-zinc-500 rounded-xl border border-zinc-800 bg-zinc-900/50">
                 No races yet. Seed the database first.
-              </div>
-            </div>
-          </div>
-        </template>
-        <template #scoring>
-          <div v-if="scoringConfig" class="py-6 flex flex-col gap-6">
-            <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
-                Points per position
-              </h3>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div
-                  v-for="rule in [
-                    { key: 'exact', label: 'Exact match', badge: 'd=0' },
-                    { key: 'offBy1', label: 'Off by 1', badge: 'd=1' },
-                    { key: 'offBy2', label: 'Off by 2', badge: 'd=2' },
-                    { key: 'offBy3Plus', label: 'Off by 3+', badge: 'd≥3' },
-                    { key: 'notInTop10', label: 'Not in Top 10', badge: '—' },
-                  ]"
-                  :key="rule.key"
-                  class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/50 last:border-0"
-                >
-                  <div class="flex items-center gap-3">
-                    <span class="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded tabular-nums w-8 text-center">{{ rule.badge }}</span>
-                    <span class="text-sm">{{ rule.label }}</span>
-                  </div>
-                  <UInput
-                    v-if="editedScoring"
-                    v-model.number="editedScoring[rule.key]"
-                    type="number"
-                    :min="0"
-                    class="w-16"
-                    size="sm"
-                  />
-                  <span v-else class="font-black tabular-nums">{{ (scoringConfig as any)[rule.key] }} <span class="text-xs text-zinc-500 font-normal">pts</span></span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
-                Prediction window
-              </h3>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/50">
-                  <div class="flex items-center gap-3">
-                    <UIcon name="i-lucide-calendar-plus" class="size-4 text-zinc-400" />
-                    <span class="text-sm">Opens before race</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <UInput
-                      v-if="editedScoring"
-                      v-model.number="editedScoring.openDaysBefore"
-                      type="number"
-                      :min="1"
-                      class="w-16"
-                      size="sm"
-                    />
-                    <span v-else class="font-black tabular-nums">{{ scoringConfig.openDaysBefore }}</span>
-                    <span class="text-xs text-zinc-500">days</span>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <UIcon name="i-lucide-lock" class="size-4 text-zinc-400" />
-                    <span class="text-sm">Locks before start</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <UInput
-                      v-if="editedScoring"
-                      v-model.number="editedScoring.lockMinutesBefore"
-                      type="number"
-                      :min="0"
-                      class="w-16"
-                      size="sm"
-                    />
-                    <span v-else class="font-black tabular-nums">{{ scoringConfig.lockMinutesBefore }}</span>
-                    <span class="text-xs text-zinc-500">min</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex gap-2">
-              <template v-if="editedScoring">
-                <UButton label="Save" icon="i-lucide-check" :loading="savingScoring" size="sm" @click="saveScoring" />
-                <UButton label="Cancel" size="sm" variant="ghost" color="neutral" @click="editedScoring = null" />
-              </template>
-              <UButton v-else label="Edit" icon="i-lucide-pencil" size="sm" variant="outline" @click="startEditScoring" />
-            </div>
-
-            <div v-if="notifSettings">
-              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">Email reminders</h3>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
-                  <div class="flex items-center gap-3">
-                    <UIcon name="i-lucide-bell" class="size-4 text-zinc-400" />
-                    <div>
-                      <p class="text-sm font-semibold">Prediction reminders</p>
-                      <p class="text-xs text-zinc-500">Send email reminders to players who haven't predicted yet</p>
-                    </div>
-                  </div>
-                  <USwitch :model-value="notifSettings.enabled" @update:model-value="toggleGlobalNotifications" />
-                </div>
-                <div v-if="notifSettings.enabled" class="px-4 py-3">
-                  <p class="text-xs text-zinc-500 mb-2">Send reminders at:</p>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="d in [7, 3, 2, 1]"
-                      :key="d"
-                      class="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
-                      :class="notifSettings.reminderDaysBefore.includes(d) ? 'bg-zinc-700 text-white' : 'bg-zinc-800/50 text-zinc-500 hover:text-zinc-300'"
-                      @click="updateReminderDays(notifSettings.reminderDaysBefore.includes(d) ? notifSettings.reminderDaysBefore.filter((x: number) => x !== d) : [...notifSettings.reminderDaysBefore, d].sort((a: number, b: number) => b - a))"
-                    >
-                      {{ d }} day{{ d > 1 ? 's' : '' }} before
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-8 pt-6 border-t border-zinc-800/30">
-              <p class="text-[11px] text-zinc-600 uppercase tracking-[0.15em] font-semibold mb-3">
-                Data
-              </p>
-              <div class="flex gap-2">
-                <UButton
-                  label="Export"
-                  icon="i-lucide-hard-drive-download"
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  :loading="exporting"
-                  @click="exportData"
-                />
-                <UButton
-                  label="Import"
-                  icon="i-lucide-hard-drive-upload"
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  :loading="dataImporting"
-                  @click="triggerImportFile"
-                />
-                <input
-                  ref="importFileRef"
-                  type="file"
-                  accept=".json"
-                  class="hidden"
-                  @change="handleImportFile"
-                >
               </div>
             </div>
           </div>

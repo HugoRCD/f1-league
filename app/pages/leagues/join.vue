@@ -1,26 +1,42 @@
 <script setup lang="ts">
+import { z } from 'zod'
+
 useSeoMeta({ title: 'Join a League — F1 League' })
 
 const route = useRoute()
-const code = ref((route.query.code as string) || '')
+const toast = useToast()
+const { refresh: refreshLeagues } = useLeagues()
 const loading = ref(false)
 const error = ref('')
 
-async function joinLeague() {
-  if (!code.value.trim()) return
+const schema = z.object({
+  inviteCode: z.string().min(1, 'Invite code is required'),
+})
+
+type Schema = z.output<typeof schema>
+const state = reactive<Partial<Schema>>({ inviteCode: (route.query.code as string) || '' })
+
+async function onSubmit() {
   loading.value = true
   error.value = ''
 
   try {
     const result = await $fetch('/api/leagues/join', {
       method: 'POST',
-      body: { inviteCode: code.value.trim() },
+      body: { inviteCode: state.inviteCode?.trim() },
     })
-    await refreshNuxtData('leagues')
+    await refreshLeagues()
+    toast.add({ title: `Joined ${result.league.name}!`, color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${result.league.slug}`)
   }
   catch (e: any) {
-    error.value = e.data?.message || 'Failed to join league'
+    const message = e.data?.message || 'Something went wrong. Please try again.'
+    error.value = message
+    if (e.statusCode === 401 || e.data?.statusCode === 401) {
+      toast.add({ title: 'Session expired', description: 'Please sign in again.', color: 'error', icon: 'i-lucide-log-out' })
+      navigateTo('/login')
+      return
+    }
   }
   finally {
     loading.value = false
@@ -42,24 +58,28 @@ async function joinLeague() {
       Enter the invite code shared by a league admin.
     </p>
 
-    <form class="flex flex-col gap-5" @submit.prevent="joinLeague">
-      <UFormField label="Invite code" required>
-        <UInput v-model="code" placeholder="e.g. AbC12345" size="lg" class="w-full" autofocus />
+    <UForm :schema="schema" :state="state" class="flex flex-col gap-5" @submit="onSubmit" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+      <UFormField name="inviteCode" label="Invite code" required>
+        <UInput v-model="state.inviteCode" placeholder="e.g. AbC12345" size="lg" class="w-full" autofocus />
       </UFormField>
 
-      <p v-if="error" class="text-sm text-red-400">
-        {{ error }}
-      </p>
+      <UAlert
+        v-if="error"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-alert-circle"
+        :title="error"
+        :close-button="{ onClick: () => error = '' }"
+      />
 
       <UButton
         type="submit"
         label="Join League"
         size="lg"
         :loading="loading"
-        :disabled="!code.trim()"
         class="font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
         block
       />
-    </form>
+    </UForm>
   </UContainer>
 </template>

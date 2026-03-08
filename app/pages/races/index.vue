@@ -16,7 +16,7 @@ interface Race {
 }
 
 const { data: races, status } = useCachedFetch<Race[]>('/api/races')
-const { data: leagues } = useLeagues()
+const lastLeague = useLastLeague()
 const { loggedIn } = useUserSession()
 
 const racesByMonth = computed(() => {
@@ -34,8 +34,8 @@ const racesByMonth = computed(() => {
 const nextRaceId = computed(() => races.value?.find(r => !r.locked)?.id ?? null)
 
 function raceLink(raceId: string): string {
-  if (leagues.value?.length) {
-    return `/leagues/${leagues.value[0].slug}/races/${raceId}`
+  if (lastLeague.value) {
+    return `/leagues/${lastLeague.value.slug}/races/${raceId}`
   }
   return `/races/${raceId}`
 }
