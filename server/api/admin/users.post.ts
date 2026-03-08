@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     userId: string
     name?: string
     email?: string
+    image?: string | null
     role?: string
   }>(event)
 
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
     const updates: Record<string, unknown> = {}
     if (body.name) updates.name = body.name
     if (body.email) updates.email = body.email
+    if (typeof body.image === 'string') updates.image = body.image || null
 
     if (Object.keys(updates).length === 0) {
       throw createError({ statusCode: 400, message: 'Nothing to update' })

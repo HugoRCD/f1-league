@@ -223,18 +223,18 @@ async function saveEditRace() {
 }
 
 
-const editingUser = ref<{ id: string, name: string, email: string } | null>(null)
+const editingUser = ref<{ id: string, name: string, email: string, image: string } | null>(null)
 const savingUser = ref(false)
 
-function startEditUser(u: { id: string, name: string, email: string }) {
-  editingUser.value = { ...u }
+function startEditUser(u: { id: string, name: string, email: string, image?: string | null }) {
+  editingUser.value = { id: u.id, name: u.name, email: u.email, image: u.image ?? '' }
 }
 
 async function saveUser() {
   if (!editingUser.value) return
   savingUser.value = true
   try {
-    await $fetch('/api/admin/users', { method: 'POST', body: { action: 'update', userId: editingUser.value.id, name: editingUser.value.name, email: editingUser.value.email } })
+    await $fetch('/api/admin/users', { method: 'POST', body: { action: 'update', userId: editingUser.value.id, name: editingUser.value.name, email: editingUser.value.email, image: editingUser.value.image } })
     toast.add({ title: 'User updated', color: 'success', icon: 'i-lucide-check' })
     editingUser.value = null
     await refreshUsers()
@@ -860,13 +860,21 @@ const tabs = [
               >
                 <template v-if="editingUser?.id === u.id">
                   <div class="flex flex-col gap-3">
-                    <div class="grid grid-cols-2 gap-3">
-                      <UFormField label="Name">
-                        <UInput v-model="editingUser!.name" size="sm" class="w-full" />
-                      </UFormField>
-                      <UFormField label="Email">
-                        <UInput v-model="editingUser!.email" size="sm" class="w-full" />
-                      </UFormField>
+                    <div class="flex items-start gap-4">
+                      <UserAvatar :image="editingUser!.image || undefined" :name="editingUser!.name" size="lg" />
+                      <div class="flex-1 flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                          <UFormField label="Name">
+                            <UInput v-model="editingUser!.name" size="sm" class="w-full" />
+                          </UFormField>
+                          <UFormField label="Email">
+                            <UInput v-model="editingUser!.email" size="sm" class="w-full" />
+                          </UFormField>
+                        </div>
+                        <UFormField label="Image URL">
+                          <UInput v-model="editingUser!.image" size="sm" placeholder="https://..." class="w-full" />
+                        </UFormField>
+                      </div>
                     </div>
                     <div class="flex gap-2">
                       <UButton label="Save" size="xs" icon="i-lucide-check" :loading="savingUser" @click="saveUser" />

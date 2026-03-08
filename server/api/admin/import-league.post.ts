@@ -4,7 +4,7 @@ import { db, schema } from 'hub:db'
 interface LeagueImport {
   version: number
   league: { name: string, description?: string }
-  members: { name: string, email: string, role: 'admin' | 'member' }[]
+  members: { name: string, email: string, image?: string | null, role: 'admin' | 'member' }[]
   predictions: {
     userEmail: string
     raceName: string
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
       userId = bot!.id
     } else {
       userId = crypto.randomUUID()
-      await db.execute(sql`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") VALUES (${userId}, ${member.name}, ${member.email}, true, NOW(), NOW())`)
+      await db.execute(sql`INSERT INTO "user" (id, name, email, image, "emailVerified", "createdAt", "updatedAt") VALUES (${userId}, ${member.name}, ${member.email}, ${member.image ?? null}, true, NOW(), NOW())`)
       usersCreated++
     }
 

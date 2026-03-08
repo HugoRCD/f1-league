@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
       role: schema.leagueMember.role,
       userName: schema.user.name,
       userEmail: schema.user.email,
+      userImage: schema.user.image,
     })
     .from(schema.leagueMember)
     .innerJoin(schema.user, eq(schema.leagueMember.userId, schema.user.id))
@@ -54,6 +55,7 @@ export default defineEventHandler(async (event) => {
     members: members.map(m => ({
       name: m.userName,
       email: m.userEmail,
+      image: m.userImage,
       role: m.role as 'admin' | 'member',
     })),
     predictions: predictions.map(p => ({
