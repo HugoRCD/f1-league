@@ -32,7 +32,7 @@ const paginatedLeagues = computed(() => {
   return filteredLeagues.value.slice(start, start + ITEMS_PER_PAGE)
 })
 watch(leagueSearch, () => {
-  leaguePage.value = 1 
+  leaguePage.value = 1
 })
 
 const userSearch = ref('')
@@ -51,7 +51,7 @@ const paginatedUsers = computed(() => {
   return filteredUsers.value.slice(start, start + ITEMS_PER_PAGE)
 })
 watch(userSearch, () => {
-  userPage.value = 1 
+  userPage.value = 1
 })
 
 async function refreshAll() {
@@ -362,6 +362,46 @@ async function handleImportFile(e: Event) {
   }
 }
 
+const legacyImporting = ref(false)
+const legacyFileRef = ref<HTMLInputElement | null>(null)
+const legacyLeagueName = ref('')
+
+function triggerLegacyFile() {
+  legacyFileRef.value?.click()
+}
+
+async function handleLeagueImport(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  legacyImporting.value = true
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+
+    if (legacyLeagueName.value.trim()) {
+      data.league = { ...data.league, name: legacyLeagueName.value.trim() }
+    }
+
+    const result = await $fetch<any>('/api/admin/import-league', {
+      method: 'POST',
+      body: data,
+    })
+    toast.add({
+      title: `League "${result.leagueName}" imported!`,
+      description: `${result.memberCount} members, ${result.predictionsImported} predictions`,
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
+    legacyLeagueName.value = ''
+    await refreshAll()
+  } catch (err: any) {
+    toast.add({ title: 'Import failed', description: err?.data?.message ?? 'Invalid file', color: 'error' })
+  } finally {
+    legacyImporting.value = false
+    if (legacyFileRef.value) legacyFileRef.value.value = ''
+  }
+}
+
 const autoImporting = ref(false)
 const autoImportResult = ref<{ imported: number, skipped: number, errors?: string[] } | null>(null)
 
@@ -502,6 +542,36 @@ const tabs = [
                     class="shrink-0"
                     @click="seedData"
                   />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
+                Import league
+              </h3>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                <div class="flex items-center gap-3 mb-3">
+                  <UIcon name="i-lucide-file-up" class="size-4 text-blue-400 shrink-0" />
+                  <div>
+                    <p class="font-bold text-sm">
+                      Import a league from file
+                    </p>
+                    <p class="text-xs text-zinc-500">
+                      Upload a league export JSON. Creates the league with all members and predictions. Drivers are matched by number, users by email.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 pl-7 flex-wrap">
+                  <UInput v-model="legacyLeagueName" placeholder="Override league name (optional)" size="sm" class="w-64" />
+                  <UButton
+                    label="Upload & import"
+                    icon="i-lucide-upload"
+                    size="sm"
+                    :loading="legacyImporting"
+                    @click="triggerLegacyFile"
+                  />
+                  <input ref="legacyFileRef" type="file" accept=".json" class="hidden" @change="handleLeagueImport">
                 </div>
               </div>
             </div>
