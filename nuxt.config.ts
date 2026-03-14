@@ -112,5 +112,6 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/nuxt',
     'motion-v/nuxt',
+    '@nuxtjs/mdc',
   ],
 })

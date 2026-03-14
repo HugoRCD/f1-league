@@ -115,6 +115,15 @@ const avatarUrl = computed(() => user.value?.image || null)
             <UIcon name="i-lucide-settings" class="size-4" />
           </NuxtLink>
 
+          <UTooltip text="Pitwall AI" :kbds="['meta', 'j']">
+            <button
+              class="hidden md:flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors"
+              @click="usePitwallChat().toggle()"
+            >
+              <UIcon name="i-f1-ai" class="size-4" />
+            </button>
+          </UTooltip>
+
           <UPopover v-model:open="menuOpen">
             <button class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-zinc-800/50 transition-colors">
               <UAvatar :src="avatarUrl || undefined" :alt="user?.name || undefined" :icon="!user?.name ? 'i-lucide-user' : undefined" size="sm" />

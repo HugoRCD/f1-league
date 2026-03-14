@@ -1,3 +1,4 @@
+import { createRequestLogger } from 'evlog'
 import { f1PredictionAgent } from '../ai/agent'
 
 export async function generatePitwallPrediction(context: {
@@ -6,6 +7,16 @@ export async function generatePitwallPrediction(context: {
   raceRound: number
   availableDriverIds: { id: string, lastName: string }[]
 }): Promise<{ prediction: string[], reasoning: string }> {
+  const log = createRequestLogger()
+  log.set({
+    pitwall: {
+      race: context.raceName,
+      location: context.raceLocation,
+      round: context.raceRound,
+      availableDrivers: context.availableDriverIds.length,
+    },
+  })
+
   const driverMap = new Map(context.availableDriverIds.map(d => [d.lastName.toLowerCase(), d.id]))
 
   const { output } = await f1PredictionAgent.generate({
@@ -22,6 +33,7 @@ export async function generatePitwallPrediction(context: {
     }
   }
 
+  const matchedCount = predictedIds.length
   if (predictedIds.length < 10) {
     for (const { id } of context.availableDriverIds) {
       if (!predictedIds.includes(id)) {
@@ -30,6 +42,15 @@ export async function generatePitwallPrediction(context: {
       }
     }
   }
+
+  log.set({
+    pitwall: {
+      matched: matchedCount,
+      filledFromFallback: predictedIds.length - matchedCount,
+      hasReasoning: !!output?.reasoning,
+    },
+  })
+  log.emit()
 
   return {
     prediction: predictedIds.slice(0, 10),
