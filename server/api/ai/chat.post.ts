@@ -1,14 +1,21 @@
-import { f1Agent } from '../../ai/agent'
+import { streamText, convertToModelMessages, stepCountIs } from 'ai'
+import { pitwallModel, pitwallSystem, pitwallTools } from '../../ai/agent'
 
 export default defineEventHandler(async (event) => {
   const log = useLogger(event)
   const { user } = await requireUserSession(event)
-  log.set({ user: { id: user.id }, chat: { messageCount: 0 } })
 
   const { messages } = await readBody(event)
-  log.set({ chat: { messageCount: messages?.length ?? 0 } })
+  log.set({
+    user: { id: user.id },
+    chat: { mode: 'pitwall', messageCount: messages?.length ?? 0 },
+  })
 
-  const result = await f1Agent.stream({ messages })
-
-  return result.toTextStreamResponse()
+  return streamText({
+    model: pitwallModel,
+    system: pitwallSystem,
+    messages: await convertToModelMessages(messages),
+    tools: pitwallTools,
+    stopWhen: stepCountIs(10),
+  }).toUIMessageStreamResponse()
 })

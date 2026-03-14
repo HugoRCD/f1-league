@@ -107,17 +107,6 @@ const avatarUrl = computed(() => user.value?.image || null)
 
       <div class="flex items-center gap-2">
         <template v-if="loggedIn">
-          <UTooltip v-if="isSuperAdmin" text="Admin AI" :kbds="['meta', 'j']">
-            <UButton
-              icon="i-lucide-sparkles"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              class="hidden md:flex"
-              @click="useAdminChat().toggle()"
-            />
-          </UTooltip>
-
           <NuxtLink
             v-if="isLeagueAdmin && currentLeague"
             :to="`/leagues/${currentLeague.slug}/settings`"
@@ -125,6 +114,15 @@ const avatarUrl = computed(() => user.value?.image || null)
           >
             <UIcon name="i-lucide-settings" class="size-4" />
           </NuxtLink>
+
+          <UTooltip text="Pitwall AI" :kbds="['meta', 'j']">
+            <button
+              class="hidden md:flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors"
+              @click="usePitwallChat().toggle()"
+            >
+              <UIcon name="i-f1-ai" class="size-4" />
+            </button>
+          </UTooltip>
 
           <UPopover v-model:open="menuOpen">
             <button class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-zinc-800/50 transition-colors">

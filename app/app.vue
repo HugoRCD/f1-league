@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { Analytics } from '@vercel/analytics/nuxt'
 
-const { user, loggedIn } = useUserSession()
-
-const isSuperAdmin = computed(() => loggedIn.value && user.value?.role === 'admin')
+const { loggedIn } = useUserSession()
 </script>
 
 <template>
@@ -18,7 +16,7 @@ const isSuperAdmin = computed(() => loggedIn.value && user.value?.role === 'admi
       </div>
 
       <ClientOnly>
-        <AdminChatSidebar v-if="isSuperAdmin" />
+        <PitwallChatSidebar v-if="loggedIn" />
       </ClientOnly>
     </div>
     <Analytics />

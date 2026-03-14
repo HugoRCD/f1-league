@@ -33,6 +33,7 @@
     "@nuxt/scripts": "0.13.2",
     "@nuxt/ui": "https://pkg.pr.new/@nuxt/ui@bd5a3bc",
     "@nuxthub/core": "^0.10.7",
+    "@nuxtjs/mdc": "^0.20.2",
     "@onmax/nuxt-better-auth": "0.0.2-alpha.30",
     "@unhead/vue": "^2.1.10",
     "@upstash/redis": "^1.36.3",

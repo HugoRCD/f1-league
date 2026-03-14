@@ -1,6 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { eq, sql, ilike, or, and } from 'drizzle-orm'
+import { db, schema } from 'hub:db'
 
 export const listUsers = tool({
   description: 'List all users with optional search by name or email. Returns id, name, email, role, createdAt, and prediction count.',
@@ -8,8 +9,6 @@ export const listUsers = tool({
     search: z.string().optional().describe('Optional search term to filter by name or email'),
   }),
   execute: async ({ search }) => {
-    const { db, schema } = await import('hub:db')
-
     let query = db
       .select({
         id: schema.user.id,
@@ -43,8 +42,6 @@ export const getUser = tool({
     email: z.string().optional().describe('User email'),
   }),
   execute: async ({ userId, email }) => {
-    const { db, schema } = await import('hub:db')
-
     if (!userId && !email) return 'Provide either userId or email.'
 
     const condition = userId ? eq(schema.user.id, userId) : eq(schema.user.email, email!)
@@ -81,8 +78,6 @@ export const listLeagues = tool({
   description: 'List all leagues with member count, season, creator, and pitwall status.',
   inputSchema: z.object({}),
   execute: async () => {
-    const { db, schema } = await import('hub:db')
-
     const leagues = await db
       .select({
         id: schema.league.id,
@@ -116,8 +111,6 @@ export const getLeague = tool({
     leagueId: z.string().describe('The league ID'),
   }),
   execute: async ({ leagueId }) => {
-    const { db, schema } = await import('hub:db')
-
     const [league] = await db.select().from(schema.league).where(eq(schema.league.id, leagueId)).limit(1)
     if (!league) return 'League not found.'
 
@@ -152,8 +145,6 @@ export const listRaces = tool({
   description: 'List all races for the current season with date, location, and whether results exist.',
   inputSchema: z.object({}),
   execute: async () => {
-    const { db, schema } = await import('hub:db')
-
     const races = await db
       .select({
         id: schema.race.id,
@@ -182,8 +173,6 @@ export const getStats = tool({
   description: 'Get app-wide statistics: total users, leagues, teams, drivers, races, results, and predictions.',
   inputSchema: z.object({}),
   execute: async () => {
-    const { db, schema } = await import('hub:db')
-
     const countQuery = (table: any) => db.select({ count: sql<number>`count(*)::int` }).from(table).then(r => r[0]!.count)
 
     const [users, teams, drivers, races, results, predictions, leagues] = await Promise.all([
@@ -207,8 +196,6 @@ export const listPredictions = tool({
     leagueId: z.string().describe('The league ID'),
   }),
   execute: async ({ raceId, leagueId }) => {
-    const { db, schema } = await import('hub:db')
-
     const predictions = await db
       .select({
         userName: schema.user.name,
@@ -242,8 +229,6 @@ export const assignUserToLeague = tool({
     role: z.enum(['admin', 'member']).default('member').describe('Role in the league'),
   }),
   execute: async ({ userId, leagueId, role }) => {
-    const { db, schema } = await import('hub:db')
-
     const [user] = await db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, userId)).limit(1)
     if (!user) return 'User not found.'
 
@@ -273,8 +258,6 @@ export const removeUserFromLeague = tool({
     leagueId: z.string().describe('The league ID'),
   }),
   execute: async ({ userId, leagueId }) => {
-    const { db, schema } = await import('hub:db')
-
     const [user] = await db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, userId)).limit(1)
     if (!user) return 'User not found.'
 
@@ -302,8 +285,6 @@ export const updateUserRole = tool({
     leagueId: z.string().optional().describe('If provided, updates the league-specific role instead of the app-wide role'),
   }),
   execute: async ({ userId, role, leagueId }) => {
-    const { db, schema } = await import('hub:db')
-
     const [user] = await db.select({ name: schema.user.name }).from(schema.user).where(eq(schema.user.id, userId)).limit(1)
     if (!user) return 'User not found.'
 
@@ -341,8 +322,6 @@ export const updateLeague = tool({
     pitwallEnabled: z.boolean().optional().describe('Enable or disable Pitwall AI predictions'),
   }),
   execute: async ({ leagueId, name, description, pitwallEnabled }) => {
-    const { db, schema } = await import('hub:db')
-
     const [league] = await db.select().from(schema.league).where(eq(schema.league.id, leagueId)).limit(1)
     if (!league) return 'League not found.'
 
@@ -370,8 +349,6 @@ export const deleteUser = tool({
     userId: z.string().describe('The user ID to delete'),
   }),
   execute: async ({ userId }) => {
-    const { db, schema } = await import('hub:db')
-
     const [user] = await db.select({ name: schema.user.name, email: schema.user.email }).from(schema.user).where(eq(schema.user.id, userId)).limit(1)
     if (!user) return 'User not found.'
 
@@ -382,5 +359,54 @@ export const deleteUser = tool({
     await db.delete(schema.user).where(eq(schema.user.id, userId))
 
     return `Deleted user ${user.name} (${user.email}) and all associated data.`
+  },
+})
+
+export const rawQuery = tool({
+  description: 'Execute a raw read-only SQL query (SELECT) against the PostgreSQL database. Use this for debugging, inspecting data, or running custom queries.',
+  inputSchema: z.object({
+    query: z.string().describe('The SQL SELECT query to execute'),
+  }),
+  execute: async ({ query }) => {
+    const trimmed = query.trim().replace(/;$/, '')
+    const firstWord = trimmed.split(/\s/)[0]?.toUpperCase()
+    if (firstWord !== 'SELECT' && firstWord !== 'WITH' && firstWord !== 'EXPLAIN') {
+      return 'Only SELECT, WITH, and EXPLAIN queries are allowed. Use rawExecute for mutations.'
+    }
+
+    try {
+      const result = await db.execute(sql.raw(trimmed))
+      const rows = Array.isArray(result) ? result : result.rows ?? []
+      if (!rows.length) return 'Query returned 0 rows.'
+      const limited = rows.slice(0, 50)
+      const header = Object.keys(limited[0] as Record<string, unknown>).join(' | ')
+      const body = limited.map((r: any) => Object.values(r).map(v => v === null ? 'NULL' : String(v)).join(' | ')).join('\n')
+      return `${header}\n${body}${rows.length > 50 ? `\n... (${rows.length - 50} more rows)` : ''}`
+    } catch (e: any) {
+      return `SQL error: ${e.message}`
+    }
+  },
+})
+
+export const rawExecute = tool({
+  description: 'Execute a raw SQL mutation (INSERT, UPDATE, DELETE, ALTER) against the PostgreSQL database. Use this for data fixes, corrections, and repairs that the other tools cannot handle.',
+  inputSchema: z.object({
+    query: z.string().describe('The SQL mutation query to execute'),
+  }),
+  execute: async ({ query }) => {
+    const trimmed = query.trim().replace(/;$/, '')
+    const firstWord = trimmed.split(/\s/)[0]?.toUpperCase()
+    const allowed = ['INSERT', 'UPDATE', 'DELETE', 'ALTER']
+    if (!allowed.includes(firstWord ?? '')) {
+      return `Only ${allowed.join(', ')} queries are allowed. Use rawQuery for SELECT.`
+    }
+
+    try {
+      const result = await db.execute(sql.raw(trimmed))
+      const rowCount = (result as any).rowCount ?? (Array.isArray(result) ? result.length : 0)
+      return `Query executed successfully. ${rowCount} row(s) affected.`
+    } catch (e: any) {
+      return `SQL error: ${e.message}`
+    }
   },
 })
