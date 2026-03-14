@@ -159,6 +159,24 @@ const teamColorMap: Record<string, string> = {
           </p>
           <CountdownTimer :target-date="(nextRace as any).lockTime" size="lg" />
         </div>
+        <div v-if="leagues?.length" class="mt-5 pt-5 border-t border-zinc-800">
+          <p class="text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-3">
+            Make your prediction
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-for="league in leagues"
+              :key="league.id"
+              :to="`/leagues/${league.slug}/races/${nextRace.id}`"
+              :label="league.name"
+              icon="i-lucide-arrow-right"
+              trailing
+              size="sm"
+              variant="outline"
+              class="font-semibold"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
