@@ -25,6 +25,8 @@ export function useLeagues() {
     key: 'leagues',
     immediate: loggedIn.value,
     watch: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
   })
 
   if (import.meta.client) {

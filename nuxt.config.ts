@@ -38,9 +38,10 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      '0 * * * *': ['import-results'],
+      '0 0 * * *': ['auto-seed'],
+      '*/30 * * * *': ['import-results'],
       '0 8 * * *': ['send-reminders'],
-      '0 9 * * *': ['pitwall-predict'],
+      '0 18 * * *': ['pitwall-predict'],
     },
     rollupConfig: {
       plugins: [vue()],

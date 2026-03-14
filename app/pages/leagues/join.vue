@@ -6,6 +6,7 @@ useSeoMeta({ title: 'Join a League — F1 League' })
 const route = useRoute()
 const toast = useToast()
 const { refresh: refreshLeagues } = useLeagues()
+const invalidateCache = useInvalidateCache()
 const loading = ref(false)
 const error = ref('')
 
@@ -25,6 +26,7 @@ async function onSubmit() {
       method: 'POST',
       body: { inviteCode: state.inviteCode?.trim() },
     })
+    invalidateCache('leagues')
     await refreshLeagues()
     toast.add({ title: `Joined ${result.league.name}!`, color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${result.league.slug}`)

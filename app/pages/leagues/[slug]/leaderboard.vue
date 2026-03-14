@@ -7,7 +7,11 @@ useSeoMeta({ title })
 
 const { data: leaderboard, status, refresh: refreshLeaderboard } = useFetch<any[]>(
   () => `/api/leagues/${leagueId.value}/leaderboard`,
-  { immediate: false },
+  {
+    immediate: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+  },
 )
 const { data: races } = useCachedFetch<any[]>('/api/races')
 

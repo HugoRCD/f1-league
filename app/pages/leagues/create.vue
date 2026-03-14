@@ -5,6 +5,7 @@ useSeoMeta({ title: 'Create a League — F1 League' })
 
 const toast = useToast()
 const { refresh: refreshLeagues } = useLeagues()
+const invalidateCache = useInvalidateCache()
 const loading = ref(false)
 const error = ref('')
 
@@ -25,6 +26,7 @@ async function onSubmit() {
       method: 'POST',
       body: { name: state.name, description: state.description || undefined },
     })
+    invalidateCache('leagues')
     await refreshLeagues()
     toast.add({ title: 'League created!', color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${league.slug}`)

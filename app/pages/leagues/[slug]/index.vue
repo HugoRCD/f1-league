@@ -29,7 +29,11 @@ interface Race {
 const { data: races, status: racesStatus } = useCachedFetch<Race[]>('/api/races')
 const { data: leaderboard, status: leaderboardStatus, refresh: refreshLeaderboard } = useFetch<any[]>(
   () => `/api/leagues/${leagueId.value}/leaderboard`,
-  { immediate: false },
+  {
+    immediate: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+  },
 )
 
 watch(leagueId, (id) => {

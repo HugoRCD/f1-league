@@ -11,16 +11,28 @@ const tab = ref('general')
 
 const { data: leagueDetail, refresh: refreshLeague } = useFetch<any>(
   () => `/api/leagues/${leagueId.value}`,
-  { immediate: false },
+  {
+    immediate: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+  },
 )
 const { data: members, refresh: refreshMembers } = useFetch<any[]>(
   () => `/api/leagues/${leagueId.value}/members`,
-  { immediate: false },
+  {
+    immediate: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+  },
 )
-const { data: races } = useFetch<any[]>('/api/races')
+const { data: races } = useCachedFetch<any[]>('/api/races')
 const { data: scoring, refresh: refreshScoring } = useFetch<any>(
   () => `/api/leagues/${leagueId.value}/scoring`,
-  { immediate: false },
+  {
+    immediate: false,
+    getCachedData: (key, nuxtApp) =>
+      nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+  },
 )
 
 watch(leagueId, (id) => {
@@ -86,6 +98,7 @@ async function saveLeague() {
       body: { name: leagueState.name, description: leagueState.description },
     })
     toast.add({ title: 'League updated', color: 'success', icon: 'i-lucide-check' })
+    invalidateCache('leagues')
     await Promise.all([refreshLeague(), refreshLeagues()])
   } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
@@ -111,16 +124,20 @@ async function copyInviteCode() {
   }, 2000)
 }
 
+const invalidateCache = useInvalidateCache()
+
 async function removeMember(userId: string) {
   if (!leagueId.value) return
   await $fetch(`/api/leagues/${leagueId.value}/members/${userId}`, { method: 'DELETE' })
   toast.add({ title: 'Member removed', color: 'success', icon: 'i-lucide-check' })
-  await refreshMembers()
+  invalidateCache('leagues')
+  await Promise.all([refreshMembers(), refreshLeagues()])
 }
 
 async function leaveLeague() {
   if (!leagueId.value) return
   await $fetch(`/api/leagues/${leagueId.value}/leave`, { method: 'POST' })
+  invalidateCache('leagues')
   await refreshLeagues()
   navigateTo('/')
 }
@@ -128,6 +145,7 @@ async function leaveLeague() {
 async function deleteLeague() {
   if (!leagueId.value) return
   await $fetch(`/api/leagues/${leagueId.value}`, { method: 'DELETE' })
+  invalidateCache('leagues')
   await refreshLeagues()
   navigateTo('/')
 }

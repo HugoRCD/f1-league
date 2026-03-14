@@ -35,4 +35,4 @@ export default defineCachedEventHandler(async () => {
   } catch {
     return []
   }
-}, { maxAge: 900, name: 'f1-news' })
+}, { maxAge: 900, swr: true, name: 'f1-news' })
