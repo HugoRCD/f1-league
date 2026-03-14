@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, stepCountIs } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 import { adminModel, adminSystem, adminTools } from '../../ai/admin-agent'
 
 export default defineEventHandler(async (event) => {
@@ -16,6 +16,5 @@ export default defineEventHandler(async (event) => {
     system: adminSystem,
     messages: await convertToModelMessages(messages),
     tools: adminTools,
-    stopWhen: stepCountIs(10),
   }).toUIMessageStreamResponse()
 })
