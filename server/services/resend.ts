@@ -54,6 +54,24 @@ export async function sendWelcomeEmail(to: string, name: string) {
   })
 }
 
+export async function sendResetPasswordEmail(to: string, name: string, url: string) {
+  const resend = getResend()
+  if (!resend) {
+    const log = createRequestLogger({ email: { type: 'reset-password', to, devMode: true } })
+    log.emit()
+    return
+  }
+
+  const { default: template } = await import('../emails/resetPasswordEmail.vue')
+  const html = await render(template, { name, url })
+  await resend.emails.send({
+    from: getSender(),
+    to,
+    subject: 'Reset your F1 League password',
+    html,
+  })
+}
+
 export async function sendReminderEmail(to: string, data: { name: string, raceName: string, raceLocation: string, lockTime: string, appUrl: string }) {
   const resend = getResend()
   if (!resend) {

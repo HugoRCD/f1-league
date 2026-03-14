@@ -85,6 +85,7 @@ export default defineNuxtConfig({
     '/admin/**': { auth: { user: { role: 'admin' } }, isr: false },
     '/login': { auth: 'guest' },
     '/register': { auth: 'guest' },
+    '/reset-password': { auth: 'guest' },
     '/api/f1/**': { isr: { expiration: 300 } },
     '/api/auth/**': { isr: false, cache: false },
   },

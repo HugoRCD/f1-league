@@ -9,6 +9,7 @@ const toast = useToast()
 
 const step = ref<'info' | 'otp'>('info')
 const loading = ref(false)
+const showPassword = ref(false)
 
 const infoSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, '50 characters max'),
@@ -17,11 +18,41 @@ const infoSchema = z.object({
 
 type InfoSchema = z.output<typeof infoSchema>
 const infoState = reactive<Partial<InfoSchema>>({ name: '', email: '' })
+const passwordState = reactive({ password: '' })
 
 const otpSchema = z.object({
   otp: z.string().length(6, 'Code must be 6 digits'),
 })
 const otpState = reactive({ otp: '' })
+
+async function submitInfo() {
+  if (showPassword.value && passwordState.password) {
+    if (passwordState.password.length < 8) {
+      toast.add({ title: 'Error', description: 'Password must be at least 8 characters', color: 'error' })
+      return
+    }
+    await registerWithPassword()
+  } else {
+    await sendCode()
+  }
+}
+
+async function registerWithPassword() {
+  loading.value = true
+  try {
+    const { error } = await client!.signUp.email({
+      name: infoState.name!,
+      email: infoState.email!,
+      password: passwordState.password,
+    })
+    if (error) throw error
+    navigateTo('/')
+  } catch {
+    toast.add({ title: 'Error', description: 'Could not create account. The email may already be registered.', color: 'error' })
+  } finally {
+    loading.value = false
+  }
+}
 
 async function sendCode() {
   loading.value = true
@@ -65,7 +96,7 @@ async function verifyAndRegister() {
     <div class="w-full max-w-sm">
       <div class="text-center mb-8">
         <div class="flex items-center justify-center gap-3 mb-6">
-          <F1Logo class="h-8 w-auto text-[#E10600]" />
+          <F1Logo class="h-8 w-auto text-f1-600" />
           <div class="h-5 w-px bg-zinc-700" />
           <span class="font-black text-sm uppercase tracking-[0.2em] text-zinc-300">League</span>
         </div>
@@ -83,7 +114,7 @@ async function verifyAndRegister() {
           :schema="infoSchema"
           :state="infoState"
           class="flex flex-col gap-4"
-          @submit="sendCode"
+          @submit="submitInfo"
           @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()"
         >
           <UFormField label="Name" name="name" required>
@@ -92,14 +123,35 @@ async function verifyAndRegister() {
           <UFormField label="Email" name="email" required>
             <UInput v-model="infoState.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
           </UFormField>
+
+          <div v-if="showPassword">
+            <UFormField label="Password" name="password" description="At least 8 characters">
+              <UInput
+                v-model="passwordState.password"
+                type="password"
+                placeholder="Choose a password"
+                size="lg"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+          <button
+            v-else
+            type="button"
+            class="text-xs text-zinc-500 hover:text-white transition-colors text-left"
+            @click="showPassword = true"
+          >
+            Set a password (optional)
+          </button>
+
           <UButton
             type="submit"
-            label="Send verification code"
-            icon="i-lucide-mail"
+            :label="showPassword && passwordState.password ? 'Create account' : 'Send verification code'"
+            :icon="showPassword && passwordState.password ? 'i-lucide-user-plus' : 'i-lucide-mail'"
             block
             :loading
             size="lg"
-            class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
+            class="mt-2 font-bold bg-f1-600 hover:bg-f1-700 border-0"
           />
         </UForm>
 
@@ -131,7 +183,7 @@ async function verifyAndRegister() {
             block
             :loading
             size="lg"
-            class="mt-2 font-bold bg-[#E10600] hover:bg-[#c00500] border-0"
+            class="mt-2 font-bold bg-f1-600 hover:bg-f1-700 border-0"
           />
           <button type="button" class="text-xs text-zinc-500 hover:text-white transition-colors" @click="step = 'info'">
             Change email
@@ -141,7 +193,7 @@ async function verifyAndRegister() {
 
       <p class="text-center text-sm text-zinc-500 mt-6">
         Already have an account?
-        <NuxtLink to="/login" class="text-[#E10600] font-semibold hover:underline">
+        <NuxtLink to="/login" class="text-f1-600 font-semibold hover:underline">
           Sign in
         </NuxtLink>
       </p>
