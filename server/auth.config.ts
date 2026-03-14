@@ -1,13 +1,21 @@
 import { admin, emailOTP } from 'better-auth/plugins'
 import { sql } from 'drizzle-orm'
-import { sendOtpEmail, sendWelcomeEmail } from './services/resend'
+import { sendOtpEmail, sendResetPasswordEmail, sendWelcomeEmail } from './services/resend'
 
 export default defineServerAuth(() => ({
   appName: 'F1 League',
-  emailAndPassword: { enabled: false },
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetPasswordEmail(user.email, user.name || 'there', url)
+    },
+  },
   session: {
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24 * 7,
     cookieCache: {
-      enabled: false,
+      enabled: true,
+      maxAge: 300,
     },
   },
   plugins: [

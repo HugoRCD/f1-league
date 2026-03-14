@@ -4,7 +4,7 @@ import { z } from 'zod'
 definePageMeta({ auth: 'user' })
 useSeoMeta({ title: 'Settings — F1 League' })
 
-const { user, fetchSession } = useUserSession()
+const { user, client, fetchSession } = useUserSession()
 const toast = useToast()
 
 const profileSchema = z.object({
@@ -22,7 +22,7 @@ const savingProfile = ref(false)
 async function saveProfile() {
   savingProfile.value = true
   try {
-    const saved = await $fetch('/api/user/profile', {
+    await $fetch('/api/user/profile', {
       method: 'POST',
       body: { name: profileState.name, image: profileState.image || null },
     })
@@ -35,6 +35,65 @@ async function saveProfile() {
     toast.add({ title: 'Error', description: e?.data?.message, color: 'error' })
   } finally {
     savingProfile.value = false
+  }
+}
+
+const { data: passwordInfo, refresh: refreshPasswordInfo } = useFetch('/api/user/has-password')
+const savingPassword = ref(false)
+
+const setPasswordSchema = z.object({
+  newPassword: z.string().min(8, 'At least 8 characters'),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+})
+const setPasswordState = reactive({ newPassword: '', confirmPassword: '' })
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'At least 8 characters'),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+})
+const changePasswordState = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' })
+
+async function setPassword() {
+  savingPassword.value = true
+  try {
+    await $fetch('/api/user/set-password', {
+      method: 'POST',
+      body: { password: setPasswordState.newPassword },
+    })
+    setPasswordState.newPassword = ''
+    setPasswordState.confirmPassword = ''
+    await refreshPasswordInfo()
+    toast.add({ title: 'Password set', description: 'You can now sign in with your password', color: 'success', icon: 'i-lucide-check' })
+  } catch (e: any) {
+    toast.add({ title: 'Error', description: e?.data?.message || 'Could not set password', color: 'error' })
+  } finally {
+    savingPassword.value = false
+  }
+}
+
+async function changePassword() {
+  savingPassword.value = true
+  try {
+    const { error } = await client!.changePassword({
+      currentPassword: changePasswordState.currentPassword,
+      newPassword: changePasswordState.newPassword,
+    })
+    if (error) throw error
+    changePasswordState.currentPassword = ''
+    changePasswordState.newPassword = ''
+    changePasswordState.confirmPassword = ''
+    toast.add({ title: 'Password updated', color: 'success', icon: 'i-lucide-check' })
+  } catch {
+    toast.add({ title: 'Error', description: 'Current password is incorrect', color: 'error' })
+  } finally {
+    savingPassword.value = false
   }
 }
 
@@ -100,6 +159,76 @@ async function setNotifications(enabled: boolean) {
             class="self-start mt-1"
           />
         </UForm>
+      </div>
+    </div>
+
+    <div class="mb-8">
+      <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-3">
+        Security
+      </h2>
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <template v-if="passwordInfo && !passwordInfo.hasPassword">
+          <div class="flex items-center gap-3 mb-4">
+            <UIcon name="i-lucide-key" class="size-4 text-zinc-400" />
+            <div>
+              <p class="text-sm font-semibold">
+                Set a password
+              </p>
+              <p class="text-xs text-zinc-500">
+                Add a password so you can sign in without an email code
+              </p>
+            </div>
+          </div>
+          <UForm :schema="setPasswordSchema" :state="setPasswordState" class="flex flex-col gap-3" @submit="setPassword" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+            <UFormField name="newPassword" label="Password">
+              <UInput v-model="setPasswordState.newPassword" type="password" placeholder="At least 8 characters" class="w-full" />
+            </UFormField>
+            <UFormField name="confirmPassword" label="Confirm password">
+              <UInput v-model="setPasswordState.confirmPassword" type="password" placeholder="Confirm your password" class="w-full" />
+            </UFormField>
+            <UButton
+              type="submit"
+              label="Set password"
+              icon="i-lucide-key"
+              :loading="savingPassword"
+              size="sm"
+              class="self-start mt-1"
+            />
+          </UForm>
+        </template>
+
+        <template v-else-if="passwordInfo?.hasPassword">
+          <div class="flex items-center gap-3 mb-4">
+            <UIcon name="i-lucide-key" class="size-4 text-zinc-400" />
+            <div>
+              <p class="text-sm font-semibold">
+                Change password
+              </p>
+              <p class="text-xs text-zinc-500">
+                Update your current password
+              </p>
+            </div>
+          </div>
+          <UForm :schema="changePasswordSchema" :state="changePasswordState" class="flex flex-col gap-3" @submit="changePassword" @keydown.meta.enter.prevent="($event.target as HTMLElement).closest('form')?.requestSubmit()">
+            <UFormField name="currentPassword" label="Current password">
+              <UInput v-model="changePasswordState.currentPassword" type="password" placeholder="Your current password" class="w-full" />
+            </UFormField>
+            <UFormField name="newPassword" label="New password">
+              <UInput v-model="changePasswordState.newPassword" type="password" placeholder="At least 8 characters" class="w-full" />
+            </UFormField>
+            <UFormField name="confirmPassword" label="Confirm new password">
+              <UInput v-model="changePasswordState.confirmPassword" type="password" placeholder="Confirm your new password" class="w-full" />
+            </UFormField>
+            <UButton
+              type="submit"
+              label="Update password"
+              icon="i-lucide-check"
+              :loading="savingPassword"
+              size="sm"
+              class="self-start mt-1"
+            />
+          </UForm>
+        </template>
       </div>
     </div>
 
