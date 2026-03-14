@@ -70,6 +70,22 @@ const lastRaceWithResult = computed(() => {
 
 const completedCount = computed(() => races.value?.filter(r => r.hasResult).length ?? 0)
 const totalRaces = computed(() => races.value?.length ?? 0)
+
+const { data: nextRaceStatus, refresh: refreshNextRaceStatus } = useFetch<{
+  total: number
+  submitted: number
+}>(
+  () => `/api/leagues/${leagueId.value}/predictions/${nextRace.value?.id}/status`,
+  {
+    immediate: false,
+    watch: false,
+    pick: ['total', 'submitted'],
+  },
+)
+
+watch([leagueId, nextRace], ([id, race]) => {
+  if (id && race) refreshNextRaceStatus()
+}, { immediate: true })
 </script>
 
 <template>
@@ -160,6 +176,18 @@ const totalRaces = computed(() => races.value?.length ?? 0)
                 Predictions lock in
               </p>
               <CountdownTimer :target-date="nextRace.lockTime" size="lg" />
+            </div>
+            <div v-if="nextRaceStatus && nextRaceStatus.total > 0" class="flex items-center gap-3 mb-4 px-1">
+              <div class="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  :style="{ width: `${(nextRaceStatus.submitted / nextRaceStatus.total) * 100}%` }"
+                />
+              </div>
+              <span class="text-xs tabular-nums text-zinc-400">
+                <span class="font-bold text-white">{{ nextRaceStatus.submitted }}</span><span class="text-zinc-600">/{{ nextRaceStatus.total }}</span>
+                predicted
+              </span>
             </div>
             <UButton
               :to="`/leagues/${league.slug}/races/${nextRace.id}`"

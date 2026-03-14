@@ -108,7 +108,7 @@ async function submitPrediction() {
       body: { positions: predictionDraft.value },
     })
     toast.add({ title: 'Prediction saved!', color: 'success', icon: 'i-lucide-check' })
-    await refreshPrediction()
+    await Promise.all([refreshPrediction(), refreshPredictionStatus()])
   } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || 'Failed to save', color: 'error' })
   } finally {
@@ -132,7 +132,7 @@ async function importFrom(fromLeagueId: string) {
       body: { fromLeagueId },
     })
     toast.add({ title: 'Prediction imported!', color: 'success', icon: 'i-lucide-check' })
-    await refreshPrediction()
+    await Promise.all([refreshPrediction(), refreshPredictionStatus()])
   } catch (e: any) {
     toast.add({ title: 'Import failed', description: e?.data?.message || 'Could not import', color: 'error' })
   } finally {
@@ -278,6 +278,22 @@ const filteredAvailableDrivers = computed(() => {
     || String(d.number).includes(q),
   )
 })
+
+const { data: predictionStatus, refresh: refreshPredictionStatus } = useFetch<{
+  total: number
+  submitted: number
+  members: { userId: string, userName: string, userImage: string | null, hasPredicted: boolean }[]
+}>(
+  () => `/api/leagues/${leagueId.value}/predictions/${raceId}/status`,
+  { immediate: false },
+)
+
+watch(leagueId, (id) => {
+  if (id) refreshPredictionStatus()
+}, { immediate: true })
+
+const predictedMembers = computed(() => predictionStatus.value?.members?.filter(m => m.hasPredicted) ?? [])
+const notPredictedMembers = computed(() => predictionStatus.value?.members?.filter(m => !m.hasPredicted) ?? [])
 
 const { data: driverStandings } = useCachedFetch('/api/f1/standings/drivers')
 const sidebarTab = ref<'grid' | 'championship'>(hasQuali.value ? 'grid' : 'championship')
@@ -680,6 +696,48 @@ const teamColorMap: Record<string, string> = {
               </div>
             </template>
           </UPopover>
+
+          <div v-if="predictionStatus && !isLocked" class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+            <div class="px-3 py-2.5 border-b border-zinc-800 flex items-center justify-between">
+              <span class="text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-400">Predictions</span>
+              <span class="text-xs font-bold tabular-nums">
+                <span class="text-white">{{ predictionStatus.submitted }}</span>
+                <span class="text-zinc-600">/{{ predictionStatus.total }}</span>
+              </span>
+            </div>
+            <div class="px-3 py-2">
+              <div class="h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-3">
+                <div
+                  class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  :style="{ width: `${predictionStatus.total > 0 ? (predictionStatus.submitted / predictionStatus.total) * 100 : 0}%` }"
+                />
+              </div>
+              <div v-if="predictedMembers.length > 0" class="mb-2">
+                <p class="text-[10px] text-zinc-600 uppercase tracking-[0.15em] font-semibold mb-1.5">
+                  Submitted
+                </p>
+                <div class="flex flex-col gap-1">
+                  <div v-for="m in predictedMembers" :key="m.userId" class="flex items-center gap-2 py-0.5">
+                    <UserAvatar :image="m.userImage" :name="m.userName" size="sm" />
+                    <span class="text-xs text-zinc-300 truncate">{{ m.userName }}</span>
+                    <UIcon name="i-lucide-check" class="size-3.5 text-emerald-500 shrink-0 ml-auto" />
+                  </div>
+                </div>
+              </div>
+              <div v-if="notPredictedMembers.length > 0">
+                <p class="text-[10px] text-zinc-600 uppercase tracking-[0.15em] font-semibold mb-1.5">
+                  Waiting
+                </p>
+                <div class="flex flex-col gap-1">
+                  <div v-for="m in notPredictedMembers" :key="m.userId" class="flex items-center gap-2 py-0.5">
+                    <UserAvatar :image="m.userImage" :name="m.userName" size="sm" />
+                    <span class="text-xs text-zinc-500 truncate">{{ m.userName }}</span>
+                    <UIcon name="i-lucide-clock" class="size-3.5 text-zinc-700 shrink-0 ml-auto" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
             <div class="flex border-b border-zinc-800">
