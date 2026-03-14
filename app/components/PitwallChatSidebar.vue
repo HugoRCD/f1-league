@@ -80,11 +80,46 @@ const toolMeta: Record<string, { active: string, done: string, suffix: string, i
 function getToolText(part: ToolPart) {
   const meta = toolMeta[getToolName(part)]
   if (!meta) return getToolName(part)
-  return `${part.state === 'output-available' ? meta.done : meta.active} ${meta.suffix}`
+  const isDone = part.state === 'output-available' || part.state === 'output-error'
+  return `${isDone ? meta.done : meta.active} ${meta.suffix}`
 }
 
 function getToolIcon(part: ToolPart) {
   return toolMeta[getToolName(part)]?.icon ?? 'i-lucide-search'
+}
+
+const SQL_TOOLS = new Set(['rawQuery', 'rawExecute'])
+
+function isSqlTool(part: ToolPart) {
+  return SQL_TOOLS.has(getToolName(part))
+}
+
+function getToolQuery(part: ToolPart): string | null {
+  const input = (part as any).input as Record<string, unknown> | undefined
+  if (!input || typeof input !== 'object') return null
+  return typeof input.query === 'string' ? input.query : null
+}
+
+function getToolOutput(part: ToolPart): string | null {
+  if ((part as any).state !== 'output-available') return null
+  const output = (part as any).output
+  if (output == null) return null
+  const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2)
+  if (text.length > 2000) return `${text.slice(0, 2000)}\n…`
+  return text
+}
+
+function getToolError(part: ToolPart): string | null {
+  if ((part as any).state !== 'output-error') return null
+  return (part as any).errorText ?? null
+}
+
+function hasToolContent(part: ToolPart): boolean {
+  const p = part as any
+  if (SQL_TOOLS.has(getToolName(part)) && p.input?.query) return true
+  if (p.state === 'output-available' && p.output != null) return true
+  if (p.state === 'output-error' && p.errorText) return true
+  return false
 }
 
 const pitwallSuggestions = [
@@ -178,12 +213,38 @@ defineShortcuts({
       >
         <template #content="{ message }">
           <template v-for="(part, index) in message.parts" :key="`${message.id}-${part.type}-${index}`">
-            <UChatTool
-              v-if="isToolUIPart(part)"
-              :text="getToolText(part)"
-              :icon="getToolIcon(part)"
-              :streaming="isToolStreaming(part)"
-            />
+            <template v-if="isToolUIPart(part)">
+              <UChatTool
+                v-if="hasToolContent(part)"
+                :text="getToolText(part)"
+                :icon="getToolIcon(part)"
+                :streaming="isToolStreaming(part)"
+              >
+                <div class="flex flex-col gap-2 text-xs">
+                  <pre
+                    v-if="isSqlTool(part) && getToolQuery(part)"
+                    class="whitespace-pre-wrap break-all rounded-md bg-zinc-900 px-3 py-2 font-mono text-emerald-400"
+                  >{{ getToolQuery(part) }}</pre>
+                  <pre
+                    v-if="getToolOutput(part)"
+                    class="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-md bg-zinc-900 px-3 py-2 font-mono text-zinc-300"
+                  >{{ getToolOutput(part) }}</pre>
+                  <div
+                    v-if="getToolError(part)"
+                    class="flex items-center gap-1.5 rounded-md bg-red-950/50 px-3 py-2 text-red-400"
+                  >
+                    <UIcon name="i-lucide-alert-circle" class="size-3.5 shrink-0" />
+                    <span>{{ getToolError(part) }}</span>
+                  </div>
+                </div>
+              </UChatTool>
+              <UChatTool
+                v-else
+                :text="getToolText(part)"
+                :icon="getToolIcon(part)"
+                :streaming="isToolStreaming(part)"
+              />
+            </template>
             <MDC
               v-else-if="isTextUIPart(part) && part.text.length > 0"
               :value="part.text"
