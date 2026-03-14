@@ -6,6 +6,8 @@ useSeoMeta({ title: 'Join the League — F1 League' })
 
 const { client, fetchSession, user } = useUserSession()
 const toast = useToast()
+const route = useRoute()
+const redirectTo = (route.query.redirect as string) || '/'
 
 const step = ref<'info' | 'otp'>('info')
 const loading = ref(false)
@@ -46,7 +48,7 @@ async function registerWithPassword() {
       password: passwordState.password,
     })
     if (error) throw error
-    navigateTo('/')
+    navigateTo(redirectTo)
   } catch {
     toast.add({ title: 'Error', description: 'Could not create account. The email may already be registered.', color: 'error' })
   } finally {
@@ -82,7 +84,7 @@ async function verifyAndRegister() {
       await $fetch('/api/user/profile', { method: 'POST', body: { name: infoState.name } }).catch(() => {})
       if (user.value) user.value = { ...user.value, name: infoState.name }
     }
-    navigateTo('/')
+    navigateTo(redirectTo)
   } catch {
     toast.add({ title: 'Invalid code', description: 'The code is incorrect or expired', color: 'error' })
   } finally {
@@ -193,7 +195,7 @@ async function verifyAndRegister() {
 
       <p class="text-center text-sm text-zinc-500 mt-6">
         Already have an account?
-        <NuxtLink to="/login" class="text-f1-600 font-semibold hover:underline">
+        <NuxtLink :to="redirectTo !== '/' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'" class="text-f1-600 font-semibold hover:underline">
           Sign in
         </NuxtLink>
       </p>

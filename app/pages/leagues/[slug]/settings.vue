@@ -74,6 +74,7 @@ const leagueState = reactive<Partial<LeagueSchema>>({
 })
 const saving = ref(false)
 const copied = ref(false)
+const copiedLink = ref(false)
 
 watch(leagueDetail, (l) => {
   if (l) {
@@ -114,6 +115,13 @@ async function regenerateInvite() {
   await refreshLeague()
 }
 
+const requestURL = useRequestURL()
+const inviteLink = computed(() => {
+  const code = leagueDetail.value?.inviteCode
+  if (!code) return ''
+  return `${requestURL.origin}/invite/${code}`
+})
+
 async function copyInviteCode() {
   const code = leagueDetail.value?.inviteCode
   if (!code) return
@@ -121,6 +129,16 @@ async function copyInviteCode() {
   copied.value = true
   setTimeout(() => {
     copied.value = false 
+  }, 2000)
+}
+
+async function copyInviteLink() {
+  if (!inviteLink.value) return
+  await navigator.clipboard.writeText(inviteLink.value)
+  copiedLink.value = true
+  toast.add({ title: 'Invite link copied!', color: 'success', icon: 'i-lucide-check' })
+  setTimeout(() => {
+    copiedLink.value = false
   }, 2000)
 }
 
@@ -242,6 +260,19 @@ const tabs = [
             </div>
 
             <div v-if="isLeagueAdmin && leagueDetail">
+              <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
+                Invite Link
+              </h2>
+              <p class="text-xs text-zinc-500 mb-3">
+                Share this link to invite people — they can join without needing a code.
+              </p>
+              <div class="flex items-center gap-3 mb-4">
+                <div class="flex-1 flex items-center px-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-300 truncate">
+                  {{ inviteLink }}
+                </div>
+                <UButton :label="copiedLink ? 'Copied!' : 'Copy link'" :icon="copiedLink ? 'i-lucide-check' : 'i-lucide-link'" variant="outline" @click="copyInviteLink" />
+              </div>
+
               <h2 class="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
                 Invite Code
               </h2>

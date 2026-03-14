@@ -10,6 +10,7 @@ const route = useRoute()
 
 const queryEmail = route.query.email as string | undefined
 const queryCode = route.query.code as string | undefined
+const redirectTo = (route.query.redirect as string) || '/'
 const isMagicLink = !!(queryEmail && queryCode)
 
 type Mode = 'otp' | 'otp-sent' | 'password' | 'verifying' | 'forgot-sent'
@@ -59,7 +60,7 @@ async function verifyCode() {
       email: emailState.email,
       otp: otpState.otp,
     })
-    navigateTo('/')
+    navigateTo(redirectTo)
   } catch {
     toast.add({ title: 'Invalid code', description: 'The code is incorrect or expired', color: 'error' })
   } finally {
@@ -75,7 +76,7 @@ async function signInWithPassword() {
       password: passwordState.password,
     })
     if (error) throw error
-    navigateTo('/')
+    navigateTo(redirectTo)
   } catch {
     toast.add({ title: 'Error', description: 'Invalid email or password', color: 'error' })
   } finally {
@@ -259,7 +260,7 @@ async function requestPasswordReset() {
 
       <p class="text-center text-sm text-zinc-500 mt-6">
         Don't have an account?
-        <NuxtLink to="/register" class="text-f1-600 font-semibold hover:underline">
+        <NuxtLink :to="redirectTo !== '/' ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'" class="text-f1-600 font-semibold hover:underline">
           Register
         </NuxtLink>
       </p>

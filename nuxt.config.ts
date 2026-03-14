@@ -105,6 +105,17 @@ export default defineNuxtConfig({
     },
   },
 
+  site: {
+    url: 'https://f1.hrcd.fr',
+  },
+
+  ogImage: {
+    defaults: {
+      width: 1200,
+      height: 630,
+    },
+  },
+
   modules: [
     '@nuxthub/core',
     '@onmax/nuxt-better-auth',
@@ -115,5 +126,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     'motion-v/nuxt',
     '@nuxtjs/mdc',
+    'nuxt-og-image',
   ],
 })

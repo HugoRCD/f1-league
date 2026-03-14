@@ -51,6 +51,26 @@ async function handleSignOut() {
 }
 
 const avatarUrl = computed(() => user.value?.image || null)
+
+const toast = useToast()
+const copiedInvite = ref(false)
+
+async function copyInviteLink() {
+  const league = activeLeague.value
+  if (!league) return
+  try {
+    const detail = await $fetch<any>(`/api/leagues/${league.id}`)
+    if (!detail.inviteCode) return
+    const link = `${useRequestURL().origin}/invite/${detail.inviteCode}`
+    await navigator.clipboard.writeText(link)
+    copiedInvite.value = true
+    toast.add({ title: 'Invite link copied!', color: 'success', icon: 'i-lucide-check' })
+    setTimeout(() => { copiedInvite.value = false }, 2000)
+  }
+  catch {
+    toast.add({ title: 'Failed to copy link', color: 'error' })
+  }
+}
 </script>
 
 <template>
@@ -107,6 +127,15 @@ const avatarUrl = computed(() => user.value?.image || null)
 
       <div class="flex items-center gap-2">
         <template v-if="loggedIn">
+          <UTooltip v-if="currentLeague" :text="copiedInvite ? 'Copied!' : 'Copy invite link'">
+            <button
+              class="hidden md:flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors"
+              @click="copyInviteLink"
+            >
+              <UIcon :name="copiedInvite ? 'i-lucide-check' : 'i-lucide-share-2'" class="size-4" />
+            </button>
+          </UTooltip>
+
           <NuxtLink
             v-if="isLeagueAdmin && currentLeague"
             :to="`/leagues/${currentLeague.slug}/settings`"
