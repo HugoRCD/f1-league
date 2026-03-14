@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...league,
-    inviteCode: membership.role === 'admin' ? league.inviteCode : undefined,
+    inviteCode: league.inviteCode,
     memberCount: members.length,
     currentUserRole: membership.role,
   }

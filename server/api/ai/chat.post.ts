@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, stepCountIs } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 import { pitwallModel, pitwallSystem, pitwallTools } from '../../ai/agent'
 
 export default defineEventHandler(async (event) => {
@@ -16,6 +16,5 @@ export default defineEventHandler(async (event) => {
     system: pitwallSystem,
     messages: await convertToModelMessages(messages),
     tools: pitwallTools,
-    stopWhen: stepCountIs(10),
   }).toUIMessageStreamResponse()
 })

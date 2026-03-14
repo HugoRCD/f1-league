@@ -1,5 +1,23 @@
 <script setup lang="ts">
 const { league, leagueId, isLeagueAdmin, refreshLeagues } = useCurrentLeague()
+const toast = useToast()
+const copiedInvite = ref(false)
+
+async function copyInviteLink() {
+  if (!leagueId.value) return
+  try {
+    const detail = await $fetch<any>(`/api/leagues/${leagueId.value}`)
+    if (!detail.inviteCode) return
+    const link = `${useRequestURL().origin}/invite/${detail.inviteCode}`
+    await navigator.clipboard.writeText(link)
+    copiedInvite.value = true
+    toast.add({ title: 'Invite link copied!', color: 'success', icon: 'i-lucide-check' })
+    setTimeout(() => { copiedInvite.value = false }, 2000)
+  }
+  catch {
+    toast.add({ title: 'Failed to copy link', color: 'error' })
+  }
+}
 
 const leagueNotFound = ref(false)
 
@@ -88,6 +106,15 @@ const totalRaces = computed(() => races.value?.length ?? 0)
           </p>
         </div>
         <div class="flex items-center gap-4">
+          <UTooltip :text="copiedInvite ? 'Copied!' : 'Copy invite link'">
+            <UButton
+              :icon="copiedInvite ? 'i-lucide-check' : 'i-lucide-share-2'"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="copyInviteLink"
+            />
+          </UTooltip>
           <div v-if="totalRaces" class="text-right hidden sm:block">
             <p class="text-2xl font-black tabular-nums">
               {{ completedCount }}<span class="text-zinc-600">/{{ totalRaces }}</span>
