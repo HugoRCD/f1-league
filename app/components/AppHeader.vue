@@ -107,6 +107,17 @@ const avatarUrl = computed(() => user.value?.image || null)
 
       <div class="flex items-center gap-2">
         <template v-if="loggedIn">
+          <UTooltip v-if="isSuperAdmin" text="Admin AI" :kbds="['meta', 'j']">
+            <UButton
+              icon="i-lucide-sparkles"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              class="hidden md:flex"
+              @click="useAdminChat().toggle()"
+            />
+          </UTooltip>
+
           <NuxtLink
             v-if="isLeagueAdmin && currentLeague"
             :to="`/leagues/${currentLeague.slug}/settings`"

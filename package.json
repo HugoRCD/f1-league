@@ -27,10 +27,11 @@
     "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
+    "@ai-sdk/vue": "^3.0.116",
     "@electric-sql/pglite": "^0.3.15",
     "@nuxt/image": "2.0.0",
     "@nuxt/scripts": "0.13.2",
-    "@nuxt/ui": "^4.5.1",
+    "@nuxt/ui": "https://pkg.pr.new/@nuxt/ui@bd5a3bc",
     "@nuxthub/core": "^0.10.7",
     "@onmax/nuxt-better-auth": "0.0.2-alpha.30",
     "@unhead/vue": "^2.1.10",
