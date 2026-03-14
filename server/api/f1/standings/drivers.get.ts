@@ -18,4 +18,4 @@ export default defineCachedEventHandler(async (): Promise<any[]> => {
   } catch {
     return []
   }
-}, { maxAge: 300, name: 'f1-standings-drivers' })
+}, { maxAge: 300, swr: true, name: 'f1-standings-drivers' })

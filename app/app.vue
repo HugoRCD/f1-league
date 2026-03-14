@@ -6,6 +6,7 @@ const { loggedIn } = useUserSession()
 
 <template>
   <UApp>
+    <NuxtLoadingIndicator color="#E10600" />
     <div class="flex">
       <div class="flex-1 min-w-0 min-h-dvh bg-zinc-950 text-zinc-100">
         <AppHeader />

@@ -7,7 +7,7 @@ const raceId = route.params.raceId as string
 const { league, leagueId, isLeagueAdmin } = useCurrentLeague()
 const { data: leagues } = useLeagues()
 
-const { data: race, status: raceStatus } = useFetch(`/api/races/${raceId}`)
+const { data: race, status: raceStatus } = useCachedFetch(`/api/races/${raceId}`)
 const { data: drivers } = useCachedFetch<any[]>('/api/drivers')
 
 useHead({
@@ -19,12 +19,12 @@ const { data: myPrediction, refresh: refreshPrediction } = useFetch<any>(
   { immediate: false },
 )
 
-const { data: standings, refresh: refreshStandings } = useFetch<any>(
+const { data: standings, refresh: refreshStandings } = useLazyFetch<any>(
   () => `/api/leagues/${leagueId.value}/races/${raceId}/standings`,
   { immediate: false },
 )
 
-const { data: allPredictions, execute: fetchAllPredictions } = useFetch<any>(
+const { data: allPredictions, execute: fetchAllPredictions } = useLazyFetch<any>(
   () => `/api/leagues/${leagueId.value}/predictions/${raceId}/all`,
   { immediate: false },
 )
@@ -48,46 +48,55 @@ function driverById(id: string) {
   return activeDrivers.value.find((d: any) => d.id === id)
 }
 
-const predictionList = ref<{ id: string }[]>([])
+const { draft: predictionDraft, setFromServer: setDraftFromServer, clear: clearDraft } = usePredictionDraft(leagueId, raceId)
+
+const predictionList = computed({
+  get: () => predictionDraft.value.map(id => ({ id })),
+  set: (val: { id: string }[]) => {
+    predictionDraft.value = val.map(d => d.id)
+  },
+})
 
 const availableDrivers = computed(() => {
-  const usedIds = new Set(predictionList.value.map(d => d.id))
+  const usedIds = new Set(predictionDraft.value)
   return activeDrivers.value.filter((d: any) => !usedIds.has(d.id))
 })
 
 watch(myPrediction, (p) => {
   if (p?.positions) {
-    predictionList.value = (p.positions as string[]).map(id => ({ id }))
+    setDraftFromServer(p.positions as string[])
   }
 }, { immediate: true })
 
-const filledCount = computed(() => predictionList.value.length)
-const canSubmit = computed(() => canPredict.value && predictionList.value.length === 10)
+const filledCount = computed(() => predictionDraft.value.length)
+const canSubmit = computed(() => canPredict.value && predictionDraft.value.length === 10)
 
 function addDriver(driverId: string) {
-  if (predictionList.value.length >= 10) return
-  if (predictionList.value.some(d => d.id === driverId)) return
-  predictionList.value.push({ id: driverId })
+  if (predictionDraft.value.length >= 10) return
+  if (predictionDraft.value.includes(driverId)) return
+  predictionDraft.value = [...predictionDraft.value, driverId]
 }
 
 function removeDriver(index: number) {
-  predictionList.value.splice(index, 1)
+  predictionDraft.value = predictionDraft.value.filter((_, i) => i !== index)
 }
 
 function moveUp(index: number) {
   if (index <= 0) return
-  const item = predictionList.value.splice(index, 1)[0]!
-  predictionList.value.splice(index - 1, 0, item)
+  const arr = [...predictionDraft.value]
+  ;[arr[index - 1], arr[index]] = [arr[index]!, arr[index - 1]!]
+  predictionDraft.value = arr
 }
 
 function moveDown(index: number) {
-  if (index >= predictionList.value.length - 1) return
-  const item = predictionList.value.splice(index, 1)[0]!
-  predictionList.value.splice(index + 1, 0, item)
+  if (index >= predictionDraft.value.length - 1) return
+  const arr = [...predictionDraft.value]
+  ;[arr[index], arr[index + 1]] = [arr[index + 1]!, arr[index]!]
+  predictionDraft.value = arr
 }
 
 function clearPrediction() {
-  predictionList.value = []
+  clearDraft()
 }
 
 async function submitPrediction() {
@@ -96,7 +105,7 @@ async function submitPrediction() {
   try {
     await $fetch(`/api/leagues/${leagueId.value}/predictions/${raceId}`, {
       method: 'POST',
-      body: { positions: predictionList.value.map(d => d.id) },
+      body: { positions: predictionDraft.value },
     })
     toast.add({ title: 'Prediction saved!', color: 'success', icon: 'i-lucide-check' })
     await refreshPrediction()
@@ -247,15 +256,15 @@ function useQualifyingOrder() {
   const grid = qualifyingGrid.value as any[]
   if (!grid?.length) return
   const top10 = grid.slice(0, 10)
-  const newList: { id: string }[] = []
+  const ids: string[] = []
   for (const entry of top10) {
     const surname = (entry.driverName as string).split(' ').pop()?.toLowerCase() ?? ''
     const match = activeDrivers.value.find((d: any) => d.lastName.toLowerCase() === surname)
-    if (match && !newList.some(x => x.id === match.id)) {
-      newList.push({ id: match.id })
+    if (match && !ids.includes(match.id)) {
+      ids.push(match.id)
     }
   }
-  predictionList.value = newList
+  predictionDraft.value = ids
 }
 
 const driverSearch = ref('')
