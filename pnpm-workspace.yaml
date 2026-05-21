@@ -1,9 +1,9 @@
 shamefullyHoist: true
 
 allowBuilds:
-  "@parcel/watcher": false
-  "@prisma/client": true
-  "@prisma/engines": true
+  '@parcel/watcher': false
+  '@prisma/client': true
+  '@prisma/engines': true
   better-sqlite3: false
   esbuild: false
   prisma: true
@@ -15,11 +15,11 @@ minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
   # Nuxt
-  - "@nuxt/*"
-  - "@nuxtjs/*"
+  - '@nuxt/*'
+  - '@nuxtjs/*'
   - nuxt
   - nuxt-*
   # Vercel
-  - "@vercel/*"
-  - "@ai-sdk/*"
+  - '@vercel/*'
+  - '@ai-sdk/*'
   - ai
