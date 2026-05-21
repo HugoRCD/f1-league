@@ -102,8 +102,8 @@ function getToolQuery(part: ToolPart): string | null {
 
 function getToolOutput(part: ToolPart): string | null {
   if ((part as any).state !== 'output-available') return null
-  const output = (part as any).output
-  if (output == null) return null
+  const { output } = (part as any)
+  if (output === null || output === undefined) return null
   const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2)
   if (text.length > 2000) return `${text.slice(0, 2000)}\n…`
   return text
@@ -117,7 +117,7 @@ function getToolError(part: ToolPart): string | null {
 function hasToolContent(part: ToolPart): boolean {
   const p = part as any
   if (SQL_TOOLS.has(getToolName(part)) && p.input?.query) return true
-  if (p.state === 'output-available' && p.output != null) return true
+  if (p.state === 'output-available' && p.output !== null && p.output !== undefined) return true
   if (p.state === 'output-error' && p.errorText) return true
   return false
 }

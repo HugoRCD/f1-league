@@ -35,8 +35,7 @@ async function joinLeague() {
     await refreshLeagues()
     toast.add({ title: `Joined ${result.league.name}!`, color: 'success', icon: 'i-lucide-check' })
     navigateTo(`/leagues/${result.league.slug}`)
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const message = e.data?.message || 'Something went wrong. Please try again.'
     toast.add({ title: 'Error', description: message, color: 'error' })
 
@@ -44,8 +43,7 @@ async function joinLeague() {
       toast.add({ title: 'Session expired', description: 'Please sign in again.', color: 'error', icon: 'i-lucide-log-out' })
       navigateTo(`/login?redirect=/invite/${code.value}`)
     }
-  }
-  finally {
+  } finally {
     joining.value = false
   }
 }

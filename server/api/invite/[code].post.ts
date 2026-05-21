@@ -41,8 +41,7 @@ export default defineEventHandler(async (event) => {
       role: 'member',
     })
     log.set({ result: 'joined' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const dbCode = e?.code ?? e?.cause?.code ?? ''
     const detail = e?.detail ?? e?.cause?.detail ?? e?.message ?? ''
     log.error(new Error(`Join via invite link failed: [${dbCode}] ${detail}`))
