@@ -12,9 +12,10 @@ async function copyInviteLink() {
     await navigator.clipboard.writeText(link)
     copiedInvite.value = true
     toast.add({ title: 'Invite link copied!', color: 'success', icon: 'i-lucide-check' })
-    setTimeout(() => { copiedInvite.value = false }, 2000)
-  }
-  catch {
+    setTimeout(() => {
+      copiedInvite.value = false 
+    }, 2000)
+  } catch {
     toast.add({ title: 'Failed to copy link', color: 'error' })
   }
 }
